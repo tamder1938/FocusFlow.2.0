@@ -1,0 +1,98 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:FocusFlow.ViewModels"
+        x:Class="FocusFlow.Views.EventDialog"
+        x:DataType="vm:EventDialogViewModel"
+        Title="{Binding Loc[EventTitle]}" Width="380" Height="640"
+        WindowStartupLocation="CenterOwner" Background="#F3F4F6">
+	<Window.Styles>
+		<Style Selector="TextBox, ComboBox, NumericUpDown, DatePicker">
+			<Setter Property="Margin" Value="0,0,0,8"/>
+			<Setter Property="HorizontalAlignment" Value="Stretch"/>
+		</Style>
+	</Window.Styles>
+
+	<ScrollViewer>
+		<StackPanel Margin="15">
+			<TextBlock Text="{Binding Loc[NameLbl]}" />
+			<TextBox Text="{Binding Title}" />
+
+			<CheckBox IsChecked="{Binding IsAllDay}" Content="{Binding Loc[AllDayLbl]}" Margin="0,0,0,10"/>
+
+			<StackPanel IsVisible="{Binding !IsAllDay}">
+				<TextBlock Text="{Binding Loc[StartTimeLbl]}" />
+				<Grid ColumnDefinitions="Auto, *, Auto, *" Margin="0,0,0,8">
+					<TextBlock Grid.Column="0" Text="{Binding Loc[HourLbl]}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+					<TextBox Grid.Column="1" Text="{Binding StartHour}" />
+					<TextBlock Grid.Column="2" Text="{Binding Loc[MinLbl]}" VerticalAlignment="Center" Margin="10,0,5,0"/>
+					<TextBox Grid.Column="3" Text="{Binding StartMinute}" />
+				</Grid>
+
+				<TextBlock Text="{Binding Loc[EndTimeLbl]}" />
+				<Grid ColumnDefinitions="Auto, *, Auto, *" Margin="0,0,0,8">
+					<TextBlock Grid.Column="0" Text="{Binding Loc[HourLbl]}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+					<TextBox Grid.Column="1" Text="{Binding EndHour}" />
+					<TextBlock Grid.Column="2" Text="{Binding Loc[MinLbl]}" VerticalAlignment="Center" Margin="10,0,5,0"/>
+					<TextBox Grid.Column="3" Text="{Binding EndMinute}" />
+				</Grid>
+			</StackPanel>
+
+			<TextBlock Text="{Binding Loc[ColorLbl]}" />
+			<TextBox Text="{Binding Color}" />
+
+			<TextBlock Text="{Binding Loc[Settings]}" />
+			<ComboBox SelectedIndex="{Binding RecurrenceIndex}">
+				<ComboBoxItem Content="None"/>
+				<ComboBoxItem Content="Daily"/>
+				<ComboBoxItem Content="Weekdays"/>
+				<ComboBoxItem Content="Weekly"/>
+				<ComboBoxItem Content="Monthly"/>
+				<ComboBoxItem Content="Yearly"/>
+				<ComboBoxItem Content="Shift work"/>
+				<ComboBoxItem Content="Custom Interval"/>
+			</ComboBox>
+
+			<StackPanel IsVisible="{Binding IsWeeklyFieldsVisible}" Margin="5,0,0,8">
+				<TextBlock Text="Days:" Margin="0,0,0,4"/>
+				<WrapPanel Orientation="Horizontal">
+					<CheckBox IsChecked="{Binding DayMon}" Content="Mon" Margin="0,0,8,0"/>
+					<CheckBox IsChecked="{Binding DayTue}" Content="Tue" Margin="0,0,8,0"/>
+					<CheckBox IsChecked="{Binding DayWed}" Content="Wed" Margin="0,0,8,0"/>
+					<CheckBox IsChecked="{Binding DayThu}" Content="Thu" Margin="0,0,8,0"/>
+					<CheckBox IsChecked="{Binding DayFri}" Content="Fri" Margin="0,0,8,0"/>
+					<CheckBox IsChecked="{Binding DaySat}" Content="Sat" Margin="0,0,8,0"/>
+					<CheckBox IsChecked="{Binding DaySun}" Content="Sun"/>
+				</WrapPanel>
+			</StackPanel>
+
+			<StackPanel IsVisible="{Binding IsShiftFieldsVisible}">
+				<TextBlock Text="{Binding Loc[WorkingDaysLbl]}" />
+				<NumericUpDown Value="{Binding WorkingDays}" Minimum="1" ParsingNumberStyle="Integer"/>
+				<TextBlock Text="{Binding Loc[OffDaysLbl]}" />
+				<NumericUpDown Value="{Binding OffDays}" Minimum="1" ParsingNumberStyle="Integer"/>
+				<TextBlock Text="{Binding Loc[CycleStartLbl]}" />
+				<DatePicker SelectedDate="{Binding CycleStartDate}" />
+			</StackPanel>
+
+			<StackPanel IsVisible="{Binding IsCustomFieldsVisible}">
+				<TextBlock Text="{Binding Loc[IntervalLbl]}" />
+				<NumericUpDown Value="{Binding IntervalValue}" Minimum="1" ParsingNumberStyle="Integer"/>
+				<TextBlock Text="{Binding Loc[IntervalUnitLbl]}" />
+				<ComboBox SelectedIndex="{Binding IntervalUnitIndex}">
+					<ComboBoxItem Content="Days"/>
+					<ComboBoxItem Content="Weeks"/>
+					<ComboBoxItem Content="Months"/>
+				</ComboBox>
+			</StackPanel>
+
+			<Grid ColumnDefinitions="Auto, *, Auto, Auto" Margin="0,15,0,10">
+				<Button Grid.Column="0" Content="Delete" Command="{Binding DeleteCommand}"
+						IsVisible="{Binding IsEditMode}" Background="#D32F2F" Foreground="White"/>
+				<StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10">
+					<Button Content="{Binding Loc[CancelBtn]}" Command="{Binding CancelCommand}"/>
+					<Button Content="{Binding Loc[SaveBtn]}" Command="{Binding SaveCommand}" Background="#1A73E8" Foreground="White"/>
+				</StackPanel>
+			</Grid>
+		</StackPanel>
+	</ScrollViewer>
+</Window>

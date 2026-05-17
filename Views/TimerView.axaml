@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:FocusFlow.ViewModels"
+             xmlns:models="clr-namespace:FocusFlow.Models"
+             x:Class="FocusFlow.Views.TimerView"
+             x:DataType="vm:TimerViewModel">
+	<StackPanel Margin="15" Spacing="12">
+		<!-- Заголовок блока "Таймер" -->
+		<TextBlock Text="{Binding Loc[Timer]}" FontSize="16" FontWeight="Bold" Foreground="#111827"/>
+
+		<!-- Выпадающий список шаблонов -->
+		<ComboBox ItemsSource="{Binding Templates}"
+                  SelectedItem="{Binding SelectedTemplate}"
+                  HorizontalAlignment="Stretch">
+			<ComboBox.ItemTemplate>
+				<DataTemplate x:DataType="models:TimerTemplate">
+					<TextBlock Text="{Binding Name}"/>
+				</DataTemplate>
+			</ComboBox.ItemTemplate>
+		</ComboBox>
+
+		<!-- Чекбокс режима ручной настройки -->
+		<CheckBox IsChecked="{Binding IsCustomMode}" Content="{Binding Loc[CustomSettings]}"/>
+
+		<!-- ДИНАМИЧЕСКИЕ ПОЛЯ: Доступны только при включенном IsCustomMode -->
+		<StackPanel Spacing="8" IsVisible="{Binding IsCustomMode}">
+			<Grid ColumnDefinitions="*, *" Margin="0,4">
+				<TextBlock Grid.Column="0" Text="{Binding Loc[WorkTime]}" VerticalAlignment="Center"/>
+				<NumericUpDown Grid.Column="1" Value="{Binding WorkMinutes}" Minimum="1" Maximum="180" ParsingNumberStyle="Integer" Height="30"/>
+			</Grid>
+
+			<Grid ColumnDefinitions="*, *" Margin="0,4">
+				<TextBlock Grid.Column="0" Text="{Binding Loc[BreakTime]}" VerticalAlignment="Center"/>
+				<NumericUpDown Grid.Column="1" Value="{Binding BreakMinutes}" Minimum="1" Maximum="60" ParsingNumberStyle="Integer" Height="30"/>
+			</Grid>
+
+			<Grid ColumnDefinitions="*, *" Margin="0,4">
+				<TextBlock Grid.Column="0" Text="Cycles:" VerticalAlignment="Center"/>
+				<NumericUpDown Grid.Column="1" Value="{Binding Cycles}" Minimum="1" Maximum="20" ParsingNumberStyle="Integer" Height="30"/>
+			</Grid>
+
+			<!-- Форма быстрого создания и сохранения текущих настроек в новый шаблон -->
+			<Grid ColumnDefinitions="*, Auto" Margin="0,5,0,0">
+				<TextBox Grid.Column="0" Text="{Binding NewTemplateName}" Watermark="{Binding Loc[TemplateName]}" Margin="0,0,8,0" Height="32"/>
+				<Button Grid.Column="1" Content="{Binding Loc[SaveAsTemplate]}" Command="{Binding CreateTemplateCommand}" Background="#1A73E8" Foreground="White" Height="32" VerticalContentAlignment="Center"/>
+			</Grid>
+		</StackPanel>
+
+		<!-- Круговой индикатор и время -->
+		<Panel Height="200" Width="200" Margin="0,10">
+			<!-- Круг прогресса -->
+			<Ellipse Stroke="LightGray" StrokeThickness="6"/>
+			<TextBlock Text="{Binding TimeDisplay}" FontSize="32" FontWeight="Bold"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+		</Panel>
+
+		<!-- Кнопки управления таймером -->
+		<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="15">
+			<Button Content="▶" Command="{Binding StartTimerCommand}" Width="40" HorizontalContentAlignment="Center"/>
+			<Button Content="⏸" Command="{Binding PauseTimerCommand}" Width="40" HorizontalContentAlignment="Center"/>
+			<Button Content="⏹" Command="{Binding StopTimerCommand}" Width="40" HorizontalContentAlignment="Center"/>
+		</StackPanel>
+	</StackPanel>
+</UserControl>

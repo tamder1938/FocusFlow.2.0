@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:vm="clr-namespace:FocusFlow.ViewModels"
+             xmlns:models="clr-namespace:FocusFlow.Models"
+             x:Class="FocusFlow.Views.WeekView"
+             x:DataType="vm:WeekViewModel">
+	<DockPanel>
+		<!-- Навигационная панель недели -->
+		<StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="12,8" Spacing="10">
+			<Button Content="&lt;" Command="{Binding PreviousWeekCommand}"/>
+			<TextBlock Text="{Binding WeekRangeTitle}" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Foreground="#111827"/>
+			<Button Content="&gt;" Command="{Binding NextWeekCommand}"/>
+		</StackPanel>
+
+		<!-- Сетка отображения недели -->
+		<ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" Margin="6">
+			<!-- ИСПРАВЛЕНО: Привязка к существующей коллекции WeekDaysCustomCollection -->
+			<ItemsControl ItemsSource="{Binding WeekDaysCustomCollection}">
+				<ItemsControl.ItemsPanel>
+					<ItemsPanelTemplate>
+						<UniformGrid Columns="7"/>
+					</ItemsPanelTemplate>
+				</ItemsControl.ItemsPanel>
+				<ItemsControl.ItemTemplate>
+					<!-- ИСПРАВЛЕНО: Указан правильный namespace моделей данных FocusFlow.Models -->
+					<DataTemplate x:DataType="models:WeekDayItem">
+						<Border BorderBrush="#E5E7EB" BorderThickness="1" Margin="4" Padding="8" Background="White" CornerRadius="6">
+							<DockPanel>
+								<!-- Заголовок дня (Например: Пн, 18) -->
+								<StackPanel DockPanel.Dock="Top" HorizontalAlignment="Center" Margin="0,0,0,10">
+									<TextBlock Text="{Binding DayName}" FontSize="12" Foreground="#9CA3AF" HorizontalAlignment="Center" TextAlignment="Center"/>
+									<TextBlock Text="{Binding DayNumber}" FontSize="16" FontWeight="Bold" Foreground="#111827" HorizontalAlignment="Center" TextAlignment="Center"/>
+								</StackPanel>
+
+								<!-- Список событий внутри текущей колонки дня -->
+								<ItemsControl ItemsSource="{Binding Events}">
+									<ItemsControl.ItemTemplate>
+										<DataTemplate x:DataType="models:CalendarEvent">
+											<Border Background="{Binding Color}" CornerRadius="4" Margin="0,2" Padding="6">
+												<TextBlock Text="{Binding Title}" FontSize="11" Foreground="White" TextWrapping="Wrap"/>
+											</Border>
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
+							</DockPanel>
+						</Border>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

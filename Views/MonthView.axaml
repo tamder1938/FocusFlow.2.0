@@ -1,0 +1,60 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FocusFlow.ViewModels"
+             xmlns:models="using:FocusFlow.Models"
+             x:Class="FocusFlow.Views.MonthView"
+             x:DataType="vm:MonthViewModel">
+	<DockPanel>
+		<!-- Панель управления -->
+		<StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="12,8" Spacing="10">
+			<Button Content="&lt;" Command="{Binding PreviousMonthCommand}"/>
+			<TextBlock Text="{Binding MonthYearTitle}" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+			<Button Content="&gt;" Command="{Binding NextMonthCommand}"/>
+		</StackPanel>
+
+		<!-- Сетка дней недели (Пн, Вт... / Mon, Tue...) -->
+		<ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding DayNamesHeaders}" Height="30">
+			<ItemsControl.ItemsPanel>
+				<ItemsPanelTemplate>
+					<UniformGrid Columns="7"/>
+				</ItemsPanelTemplate>
+			</ItemsControl.ItemsPanel>
+			<ItemsControl.ItemTemplate>
+				<DataTemplate x:DataType="x:String">
+					<TextBlock Text="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="Gray"/>
+				</DataTemplate>
+			</ItemsControl.ItemTemplate>
+		</ItemsControl>
+
+		<!-- Основная сетка ячеек месяца -->
+		<ScrollViewer Margin="6">
+			<ItemsControl ItemsSource="{Binding MonthDays}">
+				<ItemsControl.ItemsPanel>
+					<ItemsPanelTemplate>
+						<UniformGrid Columns="7" Rows="6"/>
+					</ItemsPanelTemplate>
+				</ItemsControl.ItemsPanel>
+				<ItemsControl.ItemTemplate>
+					<DataTemplate x:DataType="models:MonthDayItem">
+						<Button Command="{Binding $parent[UserControl].((vm:MonthViewModel)DataContext).SelectDayCommand}"
+								CommandParameter="{Binding Date}"
+								Background="White" BorderBrush="#E5E7EB" BorderThickness="0.5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Padding="4">
+							<DockPanel>
+								<!-- ИСПРАВЛЕНО: Изменен путь к конвертеру на vm:CalendarConverters -->
+								<TextBlock DockPanel.Dock="Top" Text="{Binding DayNumber}" FontSize="12"
+										   Foreground="{Binding IsCurrentMonth, Converter={x:Static vm:CalendarConverters.TaskIdToForeground}, ConverterParameter=monthDay}"/>
+								<ItemsControl ItemsSource="{Binding Events}">
+									<ItemsControl.ItemTemplate>
+										<DataTemplate x:DataType="models:CalendarEvent">
+											<Ellipse Width="6" Height="6" Fill="{Binding Color}" Margin="2,0"/>
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
+							</DockPanel>
+						</Button>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>
