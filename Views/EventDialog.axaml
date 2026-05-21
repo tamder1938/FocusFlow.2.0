@@ -14,7 +14,23 @@
 
 	<ScrollViewer>
 		<StackPanel Margin="15">
-			<TextBlock Text="{Binding Loc[NameLbl]}" />
+
+        <Border Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+            <StackPanel Spacing="8">
+                <TextBlock Text="Шаблон события" FontSize="12" FontWeight="SemiBold" Foreground="#1E40AF"/>
+                <ComboBox Height="36" MinWidth="220" HorizontalAlignment="Stretch" PlaceholderText="Выберите шаблон"/>
+                <WrapPanel Orientation="Horizontal" ItemHeight="36">
+                    <Button Content="Применить" MinWidth="120" Height="36" Margin="0,0,8,8"
+                            Background="#2563EB" Foreground="White"/>
+                    <Button Content="Сохранить как шаблон" MinWidth="220" Height="36" Margin="0,0,8,8"
+                            Background="#E5E7EB"/>
+                    <Button Content="Удалить шаблон" MinWidth="150" Height="36" Margin="0,0,8,0"
+                            Background="#FEE2E2" Foreground="#B91C1C"/>
+                </WrapPanel>
+            </StackPanel>
+        </Border>
+
+			<TextBlock Text="Название:" />
 			<TextBox Text="{Binding Title}" />
 
 			<CheckBox IsChecked="{Binding IsAllDay}" Content="{Binding Loc[AllDayLbl]}" Margin="0,0,0,10"/>
@@ -22,22 +38,22 @@
 			<StackPanel IsVisible="{Binding !IsAllDay}">
 				<TextBlock Text="{Binding Loc[StartTimeLbl]}" />
 				<Grid ColumnDefinitions="Auto, *, Auto, *" Margin="0,0,0,8">
-					<TextBlock Grid.Column="0" Text="{Binding Loc[HourLbl]}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+					<TextBlock Grid.Column="0" Text="Час:" VerticalAlignment="Center" Margin="0,0,5,0"/>
 					<TextBox Grid.Column="1" Text="{Binding StartHour}" />
-					<TextBlock Grid.Column="2" Text="{Binding Loc[MinLbl]}" VerticalAlignment="Center" Margin="10,0,5,0"/>
+					<TextBlock Grid.Column="2" Text="Мин:" VerticalAlignment="Center" Margin="10,0,5,0"/>
 					<TextBox Grid.Column="3" Text="{Binding StartMinute}" />
 				</Grid>
 
 				<TextBlock Text="{Binding Loc[EndTimeLbl]}" />
 				<Grid ColumnDefinitions="Auto, *, Auto, *" Margin="0,0,0,8">
-					<TextBlock Grid.Column="0" Text="{Binding Loc[HourLbl]}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+					<TextBlock Grid.Column="0" Text="Час:" VerticalAlignment="Center" Margin="0,0,5,0"/>
 					<TextBox Grid.Column="1" Text="{Binding EndHour}" />
-					<TextBlock Grid.Column="2" Text="{Binding Loc[MinLbl]}" VerticalAlignment="Center" Margin="10,0,5,0"/>
+					<TextBlock Grid.Column="2" Text="Мин:" VerticalAlignment="Center" Margin="10,0,5,0"/>
 					<TextBox Grid.Column="3" Text="{Binding EndMinute}" />
 				</Grid>
 			</StackPanel>
 
-			<TextBlock Text="{Binding Loc[ColorLbl]}" />
+			<TextBlock Text="Цвет:" />
 			<TextBox Text="{Binding Color}" />
 
 			<TextBlock Text="{Binding Loc[Settings]}" />
@@ -89,8 +105,8 @@
 				<Button Grid.Column="0" Content="Delete" Command="{Binding DeleteCommand}"
 						IsVisible="{Binding IsEditMode}" Background="#D32F2F" Foreground="White"/>
 				<StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10">
-					<Button Content="{Binding Loc[CancelBtn]}" Command="{Binding CancelCommand}"/>
-					<Button Content="{Binding Loc[SaveBtn]}" Command="{Binding SaveCommand}" Background="#1A73E8" Foreground="White"/>
+					<Button Content="Отмена" Command="{Binding CancelCommand}"/>
+					<Button Content="Сохранить" Command="{Binding SaveCommand}" Background="#1A73E8" Foreground="White"/>
 				</StackPanel>
 			</Grid>
 		</StackPanel>
