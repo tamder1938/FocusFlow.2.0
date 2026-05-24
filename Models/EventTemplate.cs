@@ -1,19 +1,26 @@
-using LiteDB;
 using System;
+using System.Collections.Generic;
 
 namespace FocusFlow.Models;
 
 public class EventTemplate
 {
-    [BsonId]
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
-    public string Color { get; set; } = "#3498db";
     public bool IsAllDay { get; set; }
     public int StartHour { get; set; }
     public int StartMinute { get; set; }
-    public int EndHour { get; set; } = 1;
+    public int EndHour { get; set; }
     public int EndMinute { get; set; }
+    public string? Color { get; set; }
     public RecurrenceType Recurrence { get; set; }
+
+    // Поля структуры повторения (синхронизировано со свойствами формы)
+    public List<DayOfWeek>? DaysOfWeek { get; set; }
+    public int? WorkingDays { get; set; }
+    public int? OffDays { get; set; }
+    public DateTime? CycleStartDate { get; set; }
+    public int? IntervalValue { get; set; }
+    public IntervalUnit? IntervalUnit { get; set; }
 }

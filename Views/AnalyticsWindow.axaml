@@ -1,15 +1,14 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="clr-namespace:FocusFlow.ViewModels"
-        x:Class="FocusFlow.Views.AnalyticsWindow"
-        x:DataType="vm:AnalyticsViewModel"
-        Title="Статистика и аналитика"
-        Width="520" Height="680"
-        WindowStartupLocation="CenterOwner"
-        Background="#F9FAFB">
+		xmlns:vm="clr-namespace:FocusFlow.ViewModels"
+		x:Class="FocusFlow.Views.AnalyticsWindow"
+		x:DataType="vm:AnalyticsViewModel"
+		Title="Статистика и аналитика"
+		Width="520" Height="680"
+		WindowStartupLocation="CenterOwner"
+		Background="#F9FAFB">
 
 	<Window.Styles>
-		<!-- Стиль плитки-карточки показателей -->
 		<Style Selector="Border.StatCard">
 			<Setter Property="Background" Value="White"/>
 			<Setter Property="CornerRadius" Value="10"/>
@@ -17,8 +16,8 @@
 			<Setter Property="BorderBrush" Value="#F3F4F6"/>
 			<Setter Property="BorderThickness" Value="1"/>
 			<Setter Property="BoxShadow" Value="0 2 4 0 #03000000"/>
+			<Setter Property="MinWidth" Value="100"/>
 		</Style>
-		<!-- Стили текста карточек -->
 		<Style Selector="TextBlock.CardHeader">
 			<Setter Property="FontSize" Value="11"/>
 			<Setter Property="Foreground" Value="#6B7280"/>
@@ -34,14 +33,13 @@
 
 	<Grid RowDefinitions="55, *, 65">
 
-		<!-- ВЕРХНЯЯ ШАПКА С НАВИГАЦИЕЙ ПО ПЕРИОДАМ -->
+		<!-- Шапка -->
 		<Border Grid.Row="0" Background="#2563EB" Padding="16,0">
 			<Grid ColumnDefinitions="Auto, *, Auto">
 				<StackPanel Grid.Column="0" VerticalAlignment="Center">
 					<TextBlock Text="Статистика и аналитика" FontSize="15" FontWeight="Bold" Foreground="White"/>
 					<TextBlock Text="Детальный отчет за текущий период" FontSize="10" Foreground="#93C5FD"/>
 				</StackPanel>
-
 				<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
 					<Button Content="&lt;" Command="{Binding PreviousWeekCommand}" Background="#3B82F6" Foreground="White" Padding="10,4" CornerRadius="4"/>
 					<TextBlock Text="{Binding WeekStart, StringFormat='Неделя {0:dd.MM.yyyy}'}" Foreground="White" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="6,0"/>
@@ -50,14 +48,13 @@
 			</Grid>
 		</Border>
 
-		<!-- ОСНОВНОЙ КОНТЕНТ -->
-		<ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="16">
-			<StackPanel Spacing="16">
+		<!-- Основной контент -->
+		<ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+			<StackPanel Spacing="16" Margin="16">
 
-				<!-- ВЕРХНИЙ БЛОК: ТРИ КАРТОЧКИ ПОКАЗАТЕЛЕЙ -->
+				<!-- Верхний блок: три карточки -->
 				<UniformGrid Columns="3" Rows="1">
-					<!-- Карточка 1: Фокусировка -->
-					<Border Classes="StatCard" Margin="0,0,4,0">
+					<Border Classes="StatCard" Margin="0,0,4,0" ClipToBounds="True">
 						<StackPanel>
 							<TextBlock Text="Всего сфокусирован" Classes="CardHeader"/>
 							<TextBlock Text="{Binding TotalFocusedTimeStr}" Classes="CardValue" Margin="0,0,0,6"/>
@@ -65,19 +62,26 @@
 						</StackPanel>
 					</Border>
 
-					<!-- Карточка 2: Задачи -->
-					<Border Classes="StatCard" Margin="4,0,4,0">
+					<!-- Карточка задач: ProgressBar обернут в Grid с отступами, чтобы линия не прижималась к краям -->
+					<Border Classes="StatCard" Margin="4,0,4,0" ClipToBounds="True">
 						<StackPanel>
 							<TextBlock Text="Задач завершено" Classes="CardHeader"/>
 							<TextBlock Text="{Binding CompletedTasksRatio}" Classes="CardValue" Margin="0,0,0,8"/>
-							<Grid RowDefinitions="Auto">
-								<ProgressBar Value="{Binding TasksProgressPercentage}" Height="5" Background="#E5E7EB" Foreground="#3B82F6" CornerRadius="2"/>
+
+							<Grid Margin="12,4,12,0">
+								<ProgressBar Value="{Binding TasksProgressPercentage}"
+                                             Height="5"
+                                             Minimum="0"
+                                             Maximum="100"
+                                             HorizontalAlignment="Stretch"
+                                             Background="#E5E7EB"
+                                             Foreground="#3B82F6"
+                                             CornerRadius="2"/>
 							</Grid>
 						</StackPanel>
 					</Border>
 
-					<!-- Карточка 3: Продуктивность -->
-					<Border Classes="StatCard" Margin="4,0,0,0">
+					<Border Classes="StatCard" Margin="4,0,0,0" ClipToBounds="True">
 						<StackPanel>
 							<TextBlock Text="Продуктивность" Classes="CardHeader"/>
 							<TextBlock Text="{Binding ProductivityPercentage, StringFormat='{}{0}%'}" Classes="CardValue" Foreground="{Binding ProductivityColor}" Margin="0,0,0,4"/>
@@ -86,12 +90,10 @@
 					</Border>
 				</UniformGrid>
 
-				<!-- БЛОК СТОЛБЧАТОГО ГРАФИКА (ДНИ НЕДЕЛИ) -->
+				<!-- Остальные блоки -->
 				<Border Background="White" CornerRadius="10" Padding="16,14" BorderBrush="#F3F4F6" BorderThickness="1" BoxShadow="0 2 4 0 #03000000">
 					<StackPanel>
 						<TextBlock Text="Распределение фокуса по дням недели" FontSize="13" FontWeight="Bold" Foreground="#1E3A8A" Margin="0,0,0,20"/>
-
-						<!-- Сетка графика высотой 180px -->
 						<ItemsControl ItemsSource="{Binding WeekDaysChart}">
 							<ItemsControl.ItemsPanel>
 								<ItemsPanelTemplate>
@@ -101,11 +103,8 @@
 							<ItemsControl.ItemTemplate>
 								<DataTemplate>
 									<Grid RowDefinitions="*, Auto, Auto" Margin="4,0">
-										<!-- Сам столбец, высота которого привязана к расчетам в пикселях -->
 										<Border Grid.Row="0" Width="24" Height="{Binding HeightRatio}" Background="{Binding Color}" CornerRadius="4" VerticalAlignment="Bottom"/>
-										<!-- Значение часов над столбцом или под ним -->
 										<TextBlock Grid.Row="1" Text="{Binding Hours, StringFormat='{}{0}ч'}" FontSize="10" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,4,0,2"/>
-										<!-- День недели -->
 										<TextBlock Grid.Row="2" Text="{Binding DayName}" FontSize="11" FontWeight="SemiBold" Foreground="#374151" HorizontalAlignment="Center"/>
 									</Grid>
 								</DataTemplate>
@@ -114,20 +113,15 @@
 					</StackPanel>
 				</Border>
 
-				<!-- БЛОК РАСПРЕДЕЛЕНИЯ ПО КАТЕГОРИЯМ ПРОЕКТОВ -->
 				<Border Background="White" CornerRadius="10" Padding="16,14" BorderBrush="#F3F4F6" BorderThickness="1" BoxShadow="0 2 4 0 #03000000">
 					<StackPanel>
 						<TextBlock Text="Фокус по категориям проектов" FontSize="13" FontWeight="Bold" Foreground="#1E3A8A" Margin="0,0,0,14"/>
-
 						<ItemsControl ItemsSource="{Binding Segments}">
 							<ItemsControl.ItemTemplate>
 								<DataTemplate>
 									<Grid ColumnDefinitions="90, *, 70" Margin="0,6">
-										<!-- Имя категории -->
 										<TextBlock Grid.Column="0" Text="{Binding Label}" FontSize="12" FontWeight="Medium" Foreground="#374151" VerticalAlignment="Center"/>
-										<!-- Полоса прогресса категории -->
 										<ProgressBar Grid.Column="1" Value="{Binding Percentage}" Height="8" Background="#E5E7EB" Foreground="{Binding Color}" CornerRadius="4" VerticalAlignment="Center" Margin="10,0"/>
-										<!-- Итоговое время -->
 										<TextBlock Grid.Column="2" Text="{Binding TimeFormatted}" FontSize="12" Foreground="#4B5563" HorizontalAlignment="Right" VerticalAlignment="Center"/>
 									</Grid>
 								</DataTemplate>
@@ -135,11 +129,10 @@
 						</ItemsControl>
 					</StackPanel>
 				</Border>
-
 			</StackPanel>
 		</ScrollViewer>
 
-		<!-- НИЖНЯЯ ПАНЕЛЬ С КНОПКОЙ ГОТОВО -->
+		<!-- Нижняя панель -->
 		<Border Grid.Row="2" Background="#F3F4F6" BorderBrush="#E5E7EB" BorderThickness="0,1,0,0" Padding="16,0">
 			<Button Content="Готово"
                     Command="{Binding CloseWindowCommand}"

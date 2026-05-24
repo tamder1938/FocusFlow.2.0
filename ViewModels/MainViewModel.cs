@@ -7,8 +7,12 @@ using FocusFlow.Services;
 using FocusFlow.Views;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace FocusFlow.ViewModels;
 
@@ -32,7 +36,6 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private TaskListViewModel? _currentTaskListViewModel;
     [ObservableProperty] private TimerViewModel? _currentTimerViewModel;
 
-    // Свойства для маленького виджета аналитики "План vs Факт"
     [ObservableProperty] private string _todayPlanTimeStr = "0:00";
     [ObservableProperty] private string _todayFactTimeStr = "0:00";
     [ObservableProperty] private double _todayFactProgress;
@@ -52,6 +55,7 @@ public partial class MainViewModel : ObservableObject
     public bool IsWeekView => CurrentCalendarView is WeekViewModel;
     public bool IsMonthView => CurrentCalendarView is MonthViewModel;
     public bool IsYearView => CurrentCalendarView is YearViewModel;
+
     public bool IsNotDayView => !IsDayView;
     public bool IsNotWeekView => !IsWeekView;
     public bool IsNotMonthView => !IsMonthView;
@@ -149,17 +153,36 @@ public partial class MainViewModel : ObservableObject
             window.Show();
     }
 
+    // ИСПРАВЛЕНИЕ: Базовый беспараметрический вызов (для клика по верхней кнопке меню)
     [RelayCommand]
     private void SwitchToDay()
     {
-        if (_currentMonthVM != null && _daySelectedHandler != null) _currentMonthVM.DaySelected -= _daySelectedHandler;
-        _currentMonthVM = null; _daySelectedHandler = null;
+        SwitchToDay(SelectedDate);
+    }
+
+    // ИСПРАВЛЕНИЕ: Полноценный внутренний метод переключения с жестким обновлением флагов
+    private void SwitchToDay(DateTime date)
+    {
+        if (_currentMonthVM != null && _daySelectedHandler != null)
+            _currentMonthVM.DaySelected -= _daySelectedHandler;
+
+        _currentMonthVM = null;
+        _daySelectedHandler = null;
 
         var vm = _services.GetRequiredService<DayViewModel>();
-        vm.SelectedDate = SelectedDate;
-        vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(DayViewModel.SelectedDate)) SelectedDate = vm.SelectedDate; };
+        vm.SelectedDate = date;
+
+        vm.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(DayViewModel.SelectedDate))
+                SelectedDate = vm.SelectedDate;
+        };
+
         CurrentCalendarView = vm;
-        UpdateTitleTranslation(); UpdateViewFlags();
+        SelectedDate = date;
+
+        UpdateTitleTranslation();
+        UpdateViewFlags(); // ГАРАНТИЯ ИСПРАВЛЕНИЯ: Принудительный сброс состояний Enabled/Disabled
     }
 
     [RelayCommand]
@@ -170,8 +193,10 @@ public partial class MainViewModel : ObservableObject
 
         var vm = _services.GetRequiredService<YearViewModel>();
         vm.GoToYear(SelectedDate.Year);
-        Action<DateTime> yearDayHandler = date => SwitchToDay(date);
-        vm.DaySelected += yearDayHandler;
+
+        // ГАРАНТИЯ ИСПРАВЛЕНИЯ: Передаем корректный вызов метода смены вкладки при клике внутри сетки года
+        _daySelectedHandler = date => SwitchToDay(date);
+        vm.DaySelected += _daySelectedHandler;
 
         CurrentCalendarView = vm;
         UpdateTitleTranslation(); UpdateViewFlags();
@@ -195,27 +220,13 @@ public partial class MainViewModel : ObservableObject
         if (_currentMonthVM != null && _daySelectedHandler != null) _currentMonthVM.DaySelected -= _daySelectedHandler;
 
         _currentMonthVM = _services.GetRequiredService<MonthViewModel>();
+
+        // ГАРАНТИЯ ИСПРАВЛЕНИЯ: Передаем корректный вызов метода смены вкладки при клике внутри сетки месяца
         _daySelectedHandler = date => SwitchToDay(date);
         _currentMonthVM.DaySelected += _daySelectedHandler;
 
         CurrentCalendarView = _currentMonthVM;
         UpdateTitleTranslation(); UpdateViewFlags();
-    }
-
-    private void SwitchToDay(DateTime date)
-    {
-        if (CurrentCalendarView is DayViewModel dayVm) dayVm.SelectedDate = date;
-        else
-        {
-            if (_currentMonthVM != null && _daySelectedHandler != null) _currentMonthVM.DaySelected -= _daySelectedHandler;
-            _currentMonthVM = null; _daySelectedHandler = null;
-
-            var vm = _services.GetRequiredService<DayViewModel>();
-            vm.SelectedDate = date;
-            vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(DayViewModel.SelectedDate)) SelectedDate = vm.SelectedDate; };
-            CurrentCalendarView = vm;
-            UpdateTitleTranslation(); UpdateViewFlags();
-        }
     }
 
     [RelayCommand]
@@ -250,5 +261,11 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(IsWeekView));
         OnPropertyChanged(nameof(IsMonthView));
         OnPropertyChanged(nameof(IsYearView));
+
+        // ГАРАНТИЯ ИСПРАВЛЕНИЯ: Отправляем уведомления для обратных инвертированных свойств XAML
+        OnPropertyChanged(nameof(IsNotDayView));
+        OnPropertyChanged(nameof(IsNotWeekView));
+        OnPropertyChanged(nameof(IsNotMonthView));
+        OnPropertyChanged(nameof(IsNotYearView));
     }
 }

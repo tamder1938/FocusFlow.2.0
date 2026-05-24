@@ -16,121 +16,162 @@ public partial class DayViewModel : ObservableObject
 {
     private readonly IDatabaseService _db;
 
+    [ObservableProperty] private DateTime _selectedDate;
+    [ObservableProperty] private ObservableCollection<CalendarEvent> _events = new();
+    [ObservableProperty] private ObservableCollection<TaskItem> _dayTasks = new();
+    [ObservableProperty] private ObservableCollection<EventDisplayItem> _eventDisplayItems = new();
+
+    // Локализация
     public LocalizationService Loc => LocalizationService.Instance;
 
-    [ObservableProperty] private DateTime _selectedDate = DateTime.Today;
-    [ObservableProperty] private string _selectedDateFormatted = string.Empty;
-    [ObservableProperty] private ObservableCollection<CalendarEvent> _events = new();
-    [ObservableProperty] private ObservableCollection<EventDisplayItem> _eventDisplayItems = new();
-    [ObservableProperty] private ObservableCollection<TaskItem> _dayTasks = new();
-    [ObservableProperty] private ObservableCollection<string> _hourStrings = new();
+    // Форматированная дата
+    public string SelectedDateFormatted =>
+        SelectedDate.ToString("dd MMMM yyyy", new CultureInfo(Loc.CurrentLanguage == "English" ? "en-US" : "ru-RU"));
+
+    // Строки часов для сетки дня
+    public List<string> HourStrings { get; } = Enumerable.Range(0, 24).Select(h => $"{h:00}:00").ToList();
 
     public DayViewModel(IDatabaseService db)
     {
         _db = db;
-
-        // ИСПРАВЛЕНО: Генерация шкалы времени с ведущим нулем (00:00, 01:00... 23:00)
-        for (int i = 0; i < 24; i++)
-        {
-            HourStrings.Add($"{i:D2}:00");
-        }
-
-        PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(SelectedDate))
-            {
-                UpdateDateFormat();
-                LoadEvents();
-            }
-        };
-
-        Loc.PropertyChanged += (s, e) => UpdateDateFormat();
-
-        UpdateDateFormat();
         LoadEvents();
+        LoadTasks();
     }
 
-    private void UpdateDateFormat()
+    partial void OnSelectedDateChanged(DateTime value)
     {
-        var culture = Loc.CurrentLanguage == "English" ? new CultureInfo("en-US") : new CultureInfo("ru-RU");
-        SelectedDateFormatted = SelectedDate.ToString("dd MMMM yyyy", culture);
+        LoadEvents();
+        LoadTasks();
+        OnPropertyChanged(nameof(SelectedDateFormatted));
     }
 
     public void LoadEvents()
     {
+        var events = _db.GetEvents(SelectedDate);
         Events.Clear();
-        EventDisplayItems.Clear();
-        DayTasks.Clear();
-
-        var tasksData = _db.GetTasksByDate(SelectedDate).ToList();
-        foreach (var task in tasksData)
-        {
-            DayTasks.Add(task);
-        }
-
-        var data = _db.GetEventsForDisplay(SelectedDate).ToList();
-
-        foreach (var ev in data)
-        {
+        foreach (var ev in events)
             Events.Add(ev);
+        UpdateEventDisplayItems();
+    }
 
-            double top = ev.Start.Hour * 60 + ev.Start.Minute;
-            double height = (ev.End - ev.Start).TotalMinutes;
-            if (height < 15) height = 15;
+    private void LoadTasks()
+    {
+        var tasks = _db.GetTasksByDate(SelectedDate);
+        DayTasks.Clear();
+        foreach (var t in tasks)
+            DayTasks.Add(t);
+    }
 
-            EventDisplayItems.Add(new EventDisplayItem
+    private void UpdateEventDisplayItems()
+    {
+        EventDisplayItems.Clear();
+        // Предполагается, что Canvas имеет ширину около 400px, левый отступ 4px, ширина события - 250px
+        double canvasWidth = 400;
+        double defaultWidth = 250;
+        double leftMargin = 4;
+        double rightMargin = canvasWidth - leftMargin - defaultWidth;
+
+        foreach (var ev in Events)
+        {
+            var startMinutes = ev.Start.Hour * 60 + ev.Start.Minute;
+            var endMinutes = ev.End.Hour * 60 + ev.End.Minute;
+            if (endMinutes <= startMinutes) endMinutes = startMinutes + 30; // fallback
+
+            double top = startMinutes;
+            double height = endMinutes - startMinutes;
+
+            var displayItem = new EventDisplayItem
             {
+                EventId = ev.Id,
                 Title = ev.Title,
                 Color = ev.Color,
                 Top = top,
                 Height = height,
-                Left = 4.0,
-                Width = 240.0,
+                Left = leftMargin,
+                Width = defaultWidth,
                 OriginalEvent = ev
-            });
+            };
+            EventDisplayItems.Add(displayItem);
         }
     }
 
     [RelayCommand]
+    private void PreviousDay() => SelectedDate = SelectedDate.AddDays(-1);
+
+    [RelayCommand]
+    private void NextDay() => SelectedDate = SelectedDate.AddDays(1);
+
+    [RelayCommand]
     private async Task AddEvent()
     {
-        var freshNewEvent = new CalendarEvent
+        var newEvent = new CalendarEvent
         {
-            Id = 0,
-            Title = string.Empty,
-            Start = SelectedDate.Date.AddHours(9),
-            End = SelectedDate.Date.AddHours(10),
-            Color = "#3498db",
+            Start = SelectedDate,
+            End = SelectedDate.AddHours(1),
             Recurrence = RecurrenceType.None
         };
-
-        var dialogViewModel = new EventDialogViewModel(freshNewEvent, SelectedDate);
-        var dialog = new EventDialog { DataContext = dialogViewModel };
-
-        if (App.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+        var dialogVm = new EventDialogViewModel(newEvent, SelectedDate);
+        var dialog = new EventDialog { DataContext = dialogVm };
+        var desktop = App.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        await dialog.ShowDialog<bool>(desktop?.MainWindow);
+        if (dialogVm.ResultEvent != null)
         {
-            var result = await dialog.ShowDialog<bool>(desktop.MainWindow);
-            if (result && dialogViewModel.ResultEvent != null)
-            {
-                _db.UpsertEvent(dialogViewModel.ResultEvent);
-                LoadEvents();
-            }
+            _db.UpsertEvent(dialogVm.ResultEvent);
+            LoadEvents();
         }
     }
 
-    public void UpdateExistingEvent(CalendarEvent ev)
+    [RelayCommand]
+    private async Task EditTaskFromCalendar(TaskItem task)
     {
-        _db.UpsertEvent(ev);
-        LoadEvents();
+        if (task == null) return;
+        var dialogVm = new TaskDialogViewModel(task);
+        var dialog = new TaskDialog { DataContext = dialogVm };
+        var desktop = App.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var result = await dialog.ShowDialog<bool?>(desktop?.MainWindow);
+        if (result == true)
+        {
+            _db.UpsertTask(task);
+            LoadTasks();
+            // Обновить связанные события, если нужно
+            LoadEvents();
+        }
     }
 
-    public void DeleteExistingEvent(int id)
+    [RelayCommand]
+    public async Task EditEvent(CalendarEvent ev)
     {
-        _db.DeleteEvent(id);
-        LoadEvents();
-    }
+        CalendarEvent? originalEvent = null;
 
-    [RelayCommand] private void NextDay() => SelectedDate = SelectedDate.AddDays(1);
-    [RelayCommand] private void PreviousDay() => SelectedDate = SelectedDate.AddDays(-1);
-    [RelayCommand] private void EditTaskFromCalendar(TaskItem task) { }
+        if (ev.Id != 0 && ev.Recurrence != RecurrenceType.None)
+            originalEvent = _db.GetEventById(ev.Id);
+
+        if (originalEvent == null && ev.Recurrence != RecurrenceType.None)
+            originalEvent = _db.FindOriginalSeries(ev);
+
+        if (originalEvent == null)
+            originalEvent = ev;
+
+        var dialogVm = new EventDialogViewModel(originalEvent, SelectedDate);
+        var dialog = new EventDialog { DataContext = dialogVm };
+        var desktop = App.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var result = await dialog.ShowDialog<bool>(desktop?.MainWindow);
+
+        if (result && dialogVm.IsDeleted)
+        {
+            if (dialogVm.SelectedDeleteMode == "DeleteAll")
+                _db.DeleteEvent(originalEvent.Id);
+            else if (dialogVm.SelectedDeleteMode == "DeleteOnlyThis")
+                _db.ExcludeDateFromEvent(originalEvent.Id, SelectedDate);
+            else if (dialogVm.SelectedDeleteMode == "DeleteCustom" && dialogVm.DatesToRemove.Count > 0)
+                foreach (var date in dialogVm.DatesToRemove)
+                    _db.ExcludeDateFromEvent(originalEvent.Id, date);
+            LoadEvents();
+        }
+        else if (result && dialogVm.ResultEvent != null)
+        {
+            _db.UpsertEvent(dialogVm.ResultEvent);
+            LoadEvents();
+        }
+    }
 }

@@ -1,51 +1,11 @@
-﻿using LiteDB;
-using FocusFlow.Models;
+﻿using FocusFlow.Models;
+using LiteDB;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
 namespace FocusFlow.Services;
-
-public interface IDatabaseService
-{
-    // События календаря
-    IEnumerable<CalendarEvent> GetEvents(DateTime date);
-    void UpsertEvent(CalendarEvent ev);
-    void DeleteEvent(int id);
-
-    // Задачи
-    IEnumerable<TaskItem> GetAllTasks();
-    TaskItem? GetTask(int id);
-    void UpsertTask(TaskItem task);
-    void DeleteTask(int id);
-    IEnumerable<TaskItem> GetTasksByDate(DateTime date);
-    IEnumerable<TaskItem> GetTasksForPeriod(DateTime start, DateTime end); // Добавлено
-
-    // Отображение (события + задачи)
-    IEnumerable<CalendarEvent> GetEventsForDisplay(DateTime date);
-
-    // Удаление события, связанного с задачей
-    void DeleteEventForTask(int taskId);
-
-    // Сессии фокусировки
-    void AddFocusSession(FocusSession session);
-    void UpdateFocusSession(FocusSession session);
-    IEnumerable<FocusSession> GetSessionsForTask(int taskId);
-    IEnumerable<FocusSession> GetSessionsForDate(DateTime date);
-    IEnumerable<FocusSession> GetSessionsForPeriod(DateTime start, DateTime end); // Добавлено
-    FocusSession? GetActiveSession();
-
-    // Шаблоны таймера
-    IEnumerable<TimerTemplate> GetAllTimerTemplates();
-    TimerTemplate? GetTimerTemplate(int id);
-    void UpsertTimerTemplate(TimerTemplate template);
-    void DeleteTimerTemplate(int id);
-    // Проекты
-    IEnumerable<ProjectItem> GetAllProjects();
-    void UpsertProject(ProjectItem project);
-    void DeleteProject(int id);
-}
 
 public class DatabaseService : IDatabaseService
 {
@@ -54,7 +14,6 @@ public class DatabaseService : IDatabaseService
     private const string TasksCollection = "tasks";
     private const string SessionsCollection = "sessions";
     private const string TemplatesCollection = "timer_templates";
-
 
     public DatabaseService()
     {
@@ -93,6 +52,9 @@ public class DatabaseService : IDatabaseService
 
         foreach (var ev in rawEvents)
         {
+            if (ev.ExceptionDates != null && ev.ExceptionDates.Any(d => d.Date == startOfDay))
+                continue;
+
             if (ev.Recurrence == RecurrenceType.None)
             {
                 computedEvents.Add(ev);
@@ -106,26 +68,11 @@ public class DatabaseService : IDatabaseService
 
             switch (ev.Recurrence)
             {
-                case RecurrenceType.Daily:
-                    isMatch = true;
-                    break;
-
-                case RecurrenceType.Weekdays:
-                    isMatch = checkDate.DayOfWeek != DayOfWeek.Saturday && checkDate.DayOfWeek != DayOfWeek.Sunday;
-                    break;
-
-                case RecurrenceType.Weekly:
-                    isMatch = ev.DaysOfWeek != null && ev.DaysOfWeek.Contains(checkDate.DayOfWeek);
-                    break;
-
-                case RecurrenceType.Monthly:
-                    isMatch = checkDate.Day == ev.Start.Day;
-                    break;
-
-                case RecurrenceType.Yearly:
-                    isMatch = checkDate.Day == ev.Start.Day && checkDate.Month == ev.Start.Month;
-                    break;
-
+                case RecurrenceType.Daily: isMatch = true; break;
+                case RecurrenceType.Weekdays: isMatch = checkDate.DayOfWeek != DayOfWeek.Saturday && checkDate.DayOfWeek != DayOfWeek.Sunday; break;
+                case RecurrenceType.Weekly: isMatch = ev.DaysOfWeek != null && ev.DaysOfWeek.Contains(checkDate.DayOfWeek); break;
+                case RecurrenceType.Monthly: isMatch = checkDate.Day == ev.Start.Day; break;
+                case RecurrenceType.Yearly: isMatch = checkDate.Day == ev.Start.Day && checkDate.Month == ev.Start.Month; break;
                 case RecurrenceType.Shift:
                     if (ev.CycleStartDate.HasValue && checkDate >= ev.CycleStartDate.Value.Date)
                     {
@@ -137,20 +84,14 @@ public class DatabaseService : IDatabaseService
                         isMatch = positionInCycle < working;
                     }
                     break;
-
                 case RecurrenceType.Custom:
                     if (ev.IntervalValue.HasValue && ev.IntervalValue > 0)
                     {
                         int val = ev.IntervalValue.Value;
                         if (ev.IntervalUnit == IntervalUnit.Days)
-                        {
                             isMatch = (checkDate - ev.Start.Date).Days % val == 0;
-                        }
                         else if (ev.IntervalUnit == IntervalUnit.Weeks)
-                        {
-                            int daysDiff = (checkDate - ev.Start.Date).Days;
-                            isMatch = (daysDiff % (val * 7) == 0);
-                        }
+                            isMatch = ((checkDate - ev.Start.Date).Days % (val * 7) == 0);
                         else if (ev.IntervalUnit == IntervalUnit.Months)
                         {
                             int monthsDiff = (checkDate.Year - ev.Start.Year) * 12 + checkDate.Month - ev.Start.Month;
@@ -171,13 +112,20 @@ public class DatabaseService : IDatabaseService
                     IsAllDay = ev.IsAllDay,
                     Recurrence = ev.Recurrence,
                     Start = ev.IsAllDay ? checkDate : checkDate.Add(ev.Start.TimeOfDay),
-                    End = ev.IsAllDay ? checkDate.AddDays(1).AddSeconds(-1) : checkDate.Add(ev.End.TimeOfDay)
+                    End = ev.IsAllDay ? checkDate.AddDays(1).AddSeconds(-1) : checkDate.Add(ev.End.TimeOfDay),
+                    ExceptionDates = ev.ExceptionDates
                 };
                 computedEvents.Add(virtualEvent);
             }
         }
-
         return computedEvents.OrderBy(e => e.Start).ToList();
+    }
+
+    public IEnumerable<CalendarEvent> GetEventsForPeriod(DateTime start, DateTime end)
+    {
+        using var db = new LiteDatabase(_dbPath);
+        var col = db.GetCollection<CalendarEvent>(EventsCollection);
+        return col.Find(e => e.Start >= start && e.End <= end).ToList();
     }
 
     public void UpsertEvent(CalendarEvent ev)
@@ -192,6 +140,42 @@ public class DatabaseService : IDatabaseService
         using var db = new LiteDatabase(_dbPath);
         var col = db.GetCollection<CalendarEvent>(EventsCollection);
         col.Delete(id);
+    }
+
+    public CalendarEvent? GetEventById(int id)
+    {
+        using var db = new LiteDatabase(_dbPath);
+        var col = db.GetCollection<CalendarEvent>(EventsCollection);
+        return col.FindById(id);
+    }
+
+    public void ExcludeDateFromEvent(int eventId, DateTime date)
+    {
+        using var db = new LiteDatabase(_dbPath);
+        var col = db.GetCollection<CalendarEvent>(EventsCollection);
+        var ev = col.FindById(eventId);
+        if (ev != null)
+        {
+            ev.ExceptionDates ??= new List<DateTime>();
+            var targetDate = date.Date;
+            if (!ev.ExceptionDates.Any(d => d.Date == targetDate))
+            {
+                ev.ExceptionDates.Add(targetDate);
+                col.Update(ev);
+            }
+        }
+    }
+
+    public CalendarEvent? FindOriginalSeries(CalendarEvent virtualEvent)
+    {
+        using var db = new LiteDatabase(_dbPath);
+        var col = db.GetCollection<CalendarEvent>(EventsCollection);
+        var candidates = col.Find(e =>
+            e.Title == virtualEvent.Title &&
+            e.Recurrence != RecurrenceType.None &&
+            e.Start.Date <= virtualEvent.Start.Date
+        ).OrderBy(e => e.Start).ToList();
+        return candidates.FirstOrDefault();
     }
 
     public IEnumerable<TaskItem> GetAllTasks()
@@ -226,8 +210,7 @@ public class DatabaseService : IDatabaseService
     {
         using var db = new LiteDatabase(_dbPath);
         var col = db.GetCollection<TaskItem>(TasksCollection);
-        var startOfDay = date.Date;
-        return col.Find(t => t.DueDate == startOfDay).ToList();
+        return col.Find(t => t.DueDate == date.Date).ToList();
     }
 
     public IEnumerable<TaskItem> GetTasksForPeriod(DateTime start, DateTime end)
@@ -238,7 +221,12 @@ public class DatabaseService : IDatabaseService
     }
 
     public IEnumerable<CalendarEvent> GetEventsForDisplay(DateTime date) => GetEvents(date);
-    public void DeleteEventForTask(int taskId) { }
+    public void DeleteEventForTask(int taskId)
+    {
+        using var db = new LiteDatabase(_dbPath);
+        var col = db.GetCollection<CalendarEvent>(EventsCollection);
+        col.DeleteMany(e => e.TaskId == taskId);
+    }
 
     public void AddFocusSession(FocusSession session)
     {
@@ -277,7 +265,12 @@ public class DatabaseService : IDatabaseService
         return col.Find(s => s.StartTime >= start.Date && s.StartTime < end.Date).ToList();
     }
 
-    public FocusSession? GetActiveSession() => null;
+    public FocusSession? GetActiveSession()
+    {
+        using var db = new LiteDatabase(_dbPath);
+        var col = db.GetCollection<FocusSession>(SessionsCollection);
+        return col.Find(s => s.EndTime == null).FirstOrDefault();
+    }
 
     public IEnumerable<TimerTemplate> GetAllTimerTemplates()
     {
@@ -306,6 +299,7 @@ public class DatabaseService : IDatabaseService
         var col = db.GetCollection<TimerTemplate>(TemplatesCollection);
         col.Delete(id);
     }
+
     public IEnumerable<ProjectItem> GetAllProjects()
     {
         using var db = new LiteDatabase(_dbPath);
@@ -317,10 +311,7 @@ public class DatabaseService : IDatabaseService
     {
         using var db = new LiteDatabase(_dbPath);
         var col = db.GetCollection<ProjectItem>("projects");
-        if (project.Id == 0)
-            col.Insert(project);
-        else
-            col.Update(project);
+        if (project.Id == 0) col.Insert(project); else col.Update(project);
     }
 
     public void DeleteProject(int id)
@@ -329,6 +320,4 @@ public class DatabaseService : IDatabaseService
         var col = db.GetCollection<ProjectItem>("projects");
         col.Delete(id);
     }
-
-
 }

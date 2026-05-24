@@ -15,20 +15,21 @@
 	<ScrollViewer>
 		<StackPanel Margin="15">
 
-        <Border Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
-            <StackPanel Spacing="8">
-                <TextBlock Text="Шаблон события" FontSize="12" FontWeight="SemiBold" Foreground="#1E40AF"/>
-                <ComboBox Height="36" MinWidth="220" HorizontalAlignment="Stretch" PlaceholderText="Выберите шаблон"/>
-                <WrapPanel Orientation="Horizontal" ItemHeight="36">
-                    <Button Content="Применить" MinWidth="120" Height="36" Margin="0,0,8,8"
-                            Background="#2563EB" Foreground="White"/>
-                    <Button Content="Сохранить как шаблон" MinWidth="220" Height="36" Margin="0,0,8,8"
-                            Background="#E5E7EB"/>
-                    <Button Content="Удалить шаблон" MinWidth="150" Height="36" Margin="0,0,8,0"
-                            Background="#FEE2E2" Foreground="#B91C1C"/>
-                </WrapPanel>
-            </StackPanel>
-        </Border>
+			<!-- Верхний блок: Загрузка из шаблона -->
+			<TextBlock Text="Загрузить из шаблона:" FontSize="12" Foreground="#6B7280" Margin="0,0,0,4"/>
+			<ComboBox ItemsSource="{Binding EventTemplates}"
+					  SelectedItem="{Binding SelectedEventTemplate}"
+					  Height="36"
+					  HorizontalAlignment="Stretch"
+					  PlaceholderText="Выберите шаблон...">
+				<ComboBox.ItemTemplate>
+					<DataTemplate>
+						<TextBlock Text="{Binding Name}"/>
+					</DataTemplate>
+				</ComboBox.ItemTemplate>
+			</ComboBox>
+
+			<Separator Height="1" Background="#E5E7EB" Margin="0,4,0,12"/>
 
 			<TextBlock Text="Название:" />
 			<TextBox Text="{Binding Title}" />
@@ -99,6 +100,22 @@
 					<ComboBoxItem Content="Weeks"/>
 					<ComboBoxItem Content="Months"/>
 				</ComboBox>
+			</StackPanel>
+
+			<Separator Height="1" Background="#E5E7EB" Margin="0,12,0,8"/>
+
+			<!-- Нижний блок: Поле отображается всегда, доступность зависит от чекбокса -->
+			<CheckBox IsChecked="{Binding SaveAsTemplate}" Content="Сохранить как шаблон" Margin="0,0,0,6"/>
+			<StackPanel>
+				<TextBox Text="{Binding TemplateName}"
+						 Watermark="Название шаблона"
+						 IsEnabled="{Binding SaveAsTemplate}"
+						 Margin="0,0,0,4"/>
+				<TextBlock Text="Шаблон появится в менеджере шаблонов"
+						   FontSize="10"
+						   Foreground="#9CA3AF"
+						   IsEnabled="{Binding SaveAsTemplate}"
+						   Margin="0,0,0,8"/>
 			</StackPanel>
 
 			<Grid ColumnDefinitions="Auto, *, Auto, Auto" Margin="0,15,0,10">

@@ -1,7 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using FocusFlow.Models;
 using FocusFlow.Services;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
@@ -9,23 +11,15 @@ namespace FocusFlow.ViewModels;
 
 public partial class YearMonthItem : ObservableObject
 {
-    [ObservableProperty]
-    private string _monthName = string.Empty;
-
-    [ObservableProperty]
-    private ObservableCollection<YearDayItem> _days = new();
+    [ObservableProperty] private string _monthName = string.Empty;
+    [ObservableProperty] private ObservableCollection<YearDayItem> _days = new();
 }
 
 public partial class YearDayItem : ObservableObject
 {
-    [ObservableProperty]
-    private DateTime _date;
-
-    [ObservableProperty]
-    private bool _isCurrentMonth;
-
-    [ObservableProperty]
-    private bool _hasTasks;
+    [ObservableProperty] private DateTime _date;
+    [ObservableProperty] private bool _isCurrentMonth;
+    [ObservableProperty] private bool _hasTasks;
 
     public int DayNumber => Date.Day;
     public bool IsToday => Date.Date == DateTime.Today;
@@ -35,21 +29,14 @@ public partial class YearViewModel : ObservableObject
 {
     private readonly IDatabaseService _db;
 
-    [ObservableProperty]
-    private int _currentYear;
-
-    [ObservableProperty]
-    private string _yearTitle = string.Empty;
-
-    [ObservableProperty]
-    private ObservableCollection<YearMonthItem> _months = new();
+    [ObservableProperty] private int _currentYear;
+    [ObservableProperty] private string _yearTitle = string.Empty;
+    [ObservableProperty] private ObservableCollection<YearMonthItem> _months = new();
 
     public event Action<DateTime>? DaySelected;
 
-    // Свойство для доступа к локализации из XAML
     public LocalizationService Loc => LocalizationService.Instance;
 
-    // Свойства для локализованных названий дней недели (короткие)
     public string MonShort => Loc["MonShort"];
     public string TueShort => Loc["TueShort"];
     public string WedShort => Loc["WedShort"];
@@ -61,7 +48,6 @@ public partial class YearViewModel : ObservableObject
     public YearViewModel(IDatabaseService db)
     {
         _db = db;
-        // Подписываемся на смену языка
         LocalizationService.Instance.PropertyChanged += (s, e) => RefreshYear();
         GoToYear(DateTime.Today.Year);
     }
@@ -75,11 +61,8 @@ public partial class YearViewModel : ObservableObject
         Reload();
     }
 
-    [RelayCommand]
-    private void PreviousYear() => GoToYear(CurrentYear - 1);
-
-    [RelayCommand]
-    private void NextYear() => GoToYear(CurrentYear + 1);
+    [RelayCommand] private void PreviousYear() => GoToYear(CurrentYear - 1);
+    [RelayCommand] private void NextYear() => GoToYear(CurrentYear + 1);
 
     [RelayCommand]
     private void SelectDay(YearDayItem? item)
@@ -97,7 +80,6 @@ public partial class YearViewModel : ObservableObject
             .Select(t => t.DueDate.Value.Date)
             .ToHashSet();
 
-        // Ключи для получения локализованных названий месяцев
         string[] monthKeys = { "January", "February", "March", "April", "May", "June",
                                "July", "August", "September", "October", "November", "December" };
 
@@ -109,18 +91,22 @@ public partial class YearViewModel : ObservableObject
 
             var monthItem = new YearMonthItem { MonthName = monthName };
 
-            // Выравнивание сетки: первый день недели — понедельник
             int diff = (7 + (firstDayOfMonth.DayOfWeek - DayOfWeek.Monday)) % 7;
             var gridStart = firstDayOfMonth.AddDays(-diff);
 
             for (int i = 0; i < 42; i++)
             {
                 var date = gridStart.AddDays(i);
+
+                // ИСПРАВЛЕНИЕ: Проверяем наличие событий через GetEventsForDisplay, который точно доступен
+                var dayEvents = _db.GetEventsForDisplay(date.Date);
+                bool dayHasActivity = allTasksThisYear.Contains(date.Date) || dayEvents.Any();
+
                 var dayItem = new YearDayItem
                 {
                     Date = date,
                     IsCurrentMonth = date.Month == monthNumber && date.Year == CurrentYear,
-                    HasTasks = allTasksThisYear.Contains(date.Date)
+                    HasTasks = dayHasActivity
                 };
                 monthItem.Days.Add(dayItem);
             }
