@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using FocusFlow.Models;
 using FocusFlow.Services;
+using FocusFlow.Views;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.ObjectModel;
@@ -13,6 +14,18 @@ public partial class TaskDialogViewModel : ObservableObject
 {
     private readonly TaskItem _task;
     private readonly IDatabaseService _db;
+    private readonly ITemplateService _templateService;
+
+    // Свойства для привязки IsChecked у ToggleButton
+    public bool IsHighSelected => PriorityIndex == 0;
+    public bool IsMediumSelected => PriorityIndex == 1;
+    public bool IsLowSelected => PriorityIndex == 2;
+    public bool IsNoneSelected => PriorityIndex == -1;
+
+    public string HighButtonColor => PriorityIndex == 0 ? "#EF4444" : "#E5E7EB";
+    public string MediumButtonColor => PriorityIndex == 1 ? "#F59E0B" : "#E5E7EB";
+    public string LowButtonColor => PriorityIndex == 2 ? "#10B981" : "#E5E7EB";
+    public string NoneButtonColor => PriorityIndex == -1 ? "#6B7280" : "#E5E7EB";
 
     public LocalizationService Loc => LocalizationService.Instance;
 
@@ -28,47 +41,54 @@ public partial class TaskDialogViewModel : ObservableObject
     [ObservableProperty] private int _startMinute = 0;
     [ObservableProperty] private int _durationMinutes = 30;
 
-    // Свойства приоритета переведены на Nullable типы (null = Без сложности/Без приоритета)
     [ObservableProperty] private int? _priority = null;
-    [ObservableProperty] private int _priorityIndex = -1; // -1 означает, что ничего не выбрано
+    [ObservableProperty] private int _priorityIndex = -1;
 
-    // ИСПРАВЛЕНО: Использование полного пути глобального пространства имен решает баг генератора MVVM
-    [ObservableProperty] private ObservableCollection<global::FocusFlow.Models.ProjectItem> _projectsList = new();
-    [ObservableProperty] private global::FocusFlow.Models.ProjectItem? _selectedProject;
+    [ObservableProperty] private ObservableCollection<ProjectItem> _projectsList = new();
+    [ObservableProperty] private ProjectItem? _selectedProject;
 
-    public TaskDialogViewModel(TaskItem task)
+    // Сохранение как шаблон
+    [ObservableProperty] private bool _saveAsTemplate;
+    [ObservableProperty] private string _templateName = string.Empty;
+
+    // Выбор шаблона для загрузки
+    [ObservableProperty] private ObservableCollection<TaskTemplate> _taskTemplates = new();
+    [ObservableProperty] private TaskTemplate? _selectedTaskTemplate;
+
+    // Уведомление об изменении PriorityIndex
+    partial void OnPriorityIndexChanged(int value)
+    {
+        OnPropertyChanged(nameof(IsHighSelected));
+        OnPropertyChanged(nameof(IsMediumSelected));
+        OnPropertyChanged(nameof(IsLowSelected));
+        OnPropertyChanged(nameof(IsNoneSelected));
+        // Добавьте эти строки:
+        OnPropertyChanged(nameof(HighButtonColor));
+        OnPropertyChanged(nameof(MediumButtonColor));
+        OnPropertyChanged(nameof(LowButtonColor));
+        OnPropertyChanged(nameof(NoneButtonColor));
+    }
+
+    public TaskDialogViewModel(TaskItem task, ITemplateService? templateService = null)
     {
         _task = task;
-
-        // Извлекаем DatabaseService из DI контейнера служб приложения
-        _db = ((App)Avalonia.Application.Current!).Services!.GetRequiredService<IDatabaseService>();
+        var services = ((App)Avalonia.Application.Current!).Services!;
+        _db = services.GetRequiredService<IDatabaseService>();
+        _templateService = templateService ?? services.GetRequiredService<ITemplateService>();
 
         Title = task.Title;
         Description = task.Description ?? string.Empty;
 
-        // Восстановление приоритета задачи
         Priority = task.Priority;
-        PriorityIndex = Priority switch
-        {
-            0 => 0,
-            1 => 1,
-            2 => 2,
-            _ => -1 // Без сложности
-        };
+        PriorityIndex = Priority switch { 0 => 0, 1 => 1, 2 => 2, _ => -1 };
 
-        // Инициализация списка проектов из LiteDB
         LoadProjectsData(task.ProjectId);
 
         HasDate = task.DueDate.HasValue;
         if (task.DueDate.HasValue)
-        {
-            var localDate = task.DueDate.Value;
-            DueDate = new DateTimeOffset(localDate.Year, localDate.Month, localDate.Day, 0, 0, 0, DateTimeOffset.Now.Offset);
-        }
+            DueDate = new DateTimeOffset(task.DueDate.Value, DateTimeOffset.Now.Offset);
         else
-        {
             DueDate = DateTimeOffset.Now;
-        }
 
         IsTimeBound = task.StartTime.HasValue;
         if (task.StartTime.HasValue)
@@ -79,30 +99,45 @@ public partial class TaskDialogViewModel : ObservableObject
 
         IsDurationSet = task.PlannedDurationMinutes > 0;
         DurationMinutes = IsDurationSet ? task.PlannedDurationMinutes : 30;
+
+        LoadTaskTemplates();
     }
 
     private void LoadProjectsData(int? activeProjectId)
     {
         ProjectsList.Clear();
-
-        // 1. Добавляем виртуальный дефолтный элемент "Без проекта" на нулевую позицию
         ProjectsList.Add(new ProjectItem { Id = 0, Name = "Без проекта", Color = "#9CA3AF" });
-
-        // 2. Считываем пользовательские проекты из базы данных
         var userProjects = _db.GetAllProjects();
         foreach (var p in userProjects)
-        {
             ProjectsList.Add(p);
-        }
 
-        // 3. Выставляем текущее выделение в ComboBox
-        if (activeProjectId.HasValue && activeProjectId.Value > 0)
+        SelectedProject = (activeProjectId.HasValue && activeProjectId.Value > 0)
+            ? ProjectsList.FirstOrDefault(p => p.Id == activeProjectId.Value)
+            : ProjectsList[0];
+    }
+
+    private void LoadTaskTemplates()
+    {
+        TaskTemplates.Clear();
+        var templates = _templateService.GetAllTaskTemplates();
+        foreach (var t in templates)
+            TaskTemplates.Add(t);
+    }
+
+    partial void OnSelectedTaskTemplateChanged(TaskTemplate? value)
+    {
+        if (value != null)
         {
-            SelectedProject = ProjectsList.FirstOrDefault(p => p.Id == activeProjectId.Value) ?? ProjectsList[0];
-        }
-        else
-        {
-            SelectedProject = ProjectsList[0]; // Выделяем "Без проекта" по умолчанию
+            Title = value.Title;
+            Description = value.Description;
+            Priority = value.Priority;
+            PriorityIndex = value.Priority ?? -1;
+            DurationMinutes = value.PlannedDurationMinutes;
+            IsDurationSet = value.PlannedDurationMinutes > 0;
+            HasDate = value.HasDate;
+            IsTimeBound = value.IsTimeBound;
+            StartHour = value.StartHour;
+            StartMinute = value.StartMinute;
         }
     }
 
@@ -111,26 +146,21 @@ public partial class TaskDialogViewModel : ObservableObject
     {
         if (int.TryParse(priorityStr, out int p))
         {
-            // Если повторно нажать на уже выбранный приоритет — сбрасываем его в "Без сложности"
-            if (Priority == p)
-            {
-                Priority = null;
-                PriorityIndex = -1;
-            }
-            else
-            {
-                Priority = p;
-                PriorityIndex = p;
-            }
+            // Убираем старое условие "if (Priority == p)", из-за которого быстрый 
+            // двойной клик воспринимался как отмена выбора и сбрасывал всё в "Нет".
+            Priority = p;
+            PriorityIndex = p;
         }
     }
 
     [RelayCommand]
     private void ClearPriority()
     {
+        // Кнопка "Нет" теперь жестко переключает индекс в состояние без приоритета
         Priority = null;
-        PriorityIndex = -1; // Принудительный сброс в состояние "Без сложности"
+        PriorityIndex = -1;
     }
+
 
     [RelayCommand]
     private void Save()
@@ -140,25 +170,37 @@ public partial class TaskDialogViewModel : ObservableObject
 
         _task.Title = Title.Trim();
         _task.Description = Description.Trim();
-
-        // Сохраняем приоритет (может быть null)
         _task.Priority = PriorityIndex >= 0 ? PriorityIndex : null;
-
-        // Сохраняем ID проекта. Если выбран "Без проекта" (Id = 0), пишем null
         _task.ProjectId = (SelectedProject != null && SelectedProject.Id > 0) ? SelectedProject.Id : null;
-
         _task.DueDate = HasDate ? DueDate.LocalDateTime.Date : null;
         _task.StartTime = IsTimeBound ? new TimeSpan(StartHour, StartMinute, 0) : null;
         _task.PlannedDurationMinutes = IsDurationSet ? DurationMinutes : 0;
-
-        // Задаем цвет подложки на основе сложности для календаря
         _task.Color = _task.Priority switch
         {
-            0 => "#EF4444", // Высокий
-            1 => "#F59E0B", // Средний
-            2 => "#10B981", // Низкий
-            _ => "#9CA3AF"  // Без сложности (серый)
+            0 => "#EF4444",
+            1 => "#F59E0B",
+            2 => "#10B981",
+            _ => "#9CA3AF"
         };
+
+        if (SaveAsTemplate && !string.IsNullOrWhiteSpace(TemplateName))
+        {
+            var taskTemplate = new TaskTemplate
+            {
+                Name = TemplateName.Trim(),
+                Title = _task.Title,
+                Description = _task.Description ?? string.Empty,
+                PlannedDurationMinutes = _task.PlannedDurationMinutes,
+                Priority = _task.Priority,
+                ProjectId = _task.ProjectId,
+                HasDate = HasDate,
+                IsTimeBound = IsTimeBound,
+                StartHour = StartHour,
+                StartMinute = StartMinute
+            };
+            _templateService.UpsertTaskTemplate(taskTemplate);
+            LoadTaskTemplates();
+        }
 
         CloseDialog(true);
     }
@@ -176,27 +218,21 @@ public partial class TaskDialogViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void OpenProjectsManagement()
+    private async void OpenProjectsManagement()
     {
         var managementVm = new ProjectsManagementViewModel();
-        var window = new FocusFlow.Views.ProjectsManagementWindow { DataContext = managementVm };
+        var window = new ProjectsManagementWindow { DataContext = managementVm };
+        var desktop = App.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var owner = desktop?.MainWindow;
+        if (owner != null && owner.IsVisible)
+            await window.ShowDialog(owner);
+        else
+            window.Show();
 
-        if (App.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            // Открываем окно как модальный диалог поверх текущего окна
-            var currentWindow = desktop.Windows.FirstOrDefault(w => w.DataContext == this);
-            if (currentWindow != null)
-            {
-                window.ShowDialog(currentWindow).ContinueWith(_ =>
-                {
-                    // После закрытия окна управления проектами обновляем список в ComboBox на лету!
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                    {
-                        int? currentSelectedId = SelectedProject?.Id;
-                        LoadProjectsData(currentSelectedId);
-                    });
-                });
-            }
-        }
+            int? currentSelectedId = SelectedProject?.Id;
+            LoadProjectsData(currentSelectedId);
+        });
     }
 }

@@ -1,47 +1,89 @@
-<!-- Priority buttons default gray -->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:FocusFlow.ViewModels"
         xmlns:models="using:FocusFlow.Models"
-        xmlns:local="clr-namespace:FocusFlow.Converters"
         x:Class="FocusFlow.Views.TaskDialog"
         x:DataType="vm:TaskDialogViewModel"
-        Title="{Binding Loc[TaskTitle]}" Width="380" Height="680"
+        Title="{Binding Loc[TaskTitle]}" Width="380" Height="720"
         WindowStartupLocation="CenterOwner"
         Background="#F9FAFB">
 
-	<Window.Resources>
-		<local:PriorityToColorConverter x:Key="PriorityToColorConverter"/>
-	</Window.Resources>
+	<Window.Styles>
+		<!-- 1. Базовый стиль для всех кнопок приоритета -->
+		<Style Selector="ToggleButton.priority-btn">
+			<Setter Property="Height" Value="32"/>
+			<Setter Property="CornerRadius" Value="6"/>
+			<Setter Property="Margin" Value="2"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+			<Setter Property="BorderBrush" Value="Transparent"/>
+			<Setter Property="BorderThickness" Value="0"/>
+			<!-- Дефолтное состояние: серый фон, тёмный текст -->
+			<Setter Property="Background" Value="#E5E7EB"/>
+			<Setter Property="Foreground" Value="#374151"/>
+		</Style>
+
+		<!-- 2. Высокий приоритет (Красный) -->
+		<Style Selector="ToggleButton.priority-btn.high:pointerover /template/ ContentPresenter,
+					 ToggleButton.priority-btn.high:checked /template/ ContentPresenter,
+					 ToggleButton.priority-btn.high:checked:pointerover /template/ ContentPresenter,
+					 ToggleButton.priority-btn.high:pressed /template/ ContentPresenter">
+			<Setter Property="Background" Value="#EF4444"/>
+			<Setter Property="Foreground" Value="White"/>
+		</Style>
+
+		<!-- 3. Средний приоритет (Жёлтый / Оранжевый) -->
+		<Style Selector="ToggleButton.priority-btn.medium:pointerover /template/ ContentPresenter,
+					 ToggleButton.priority-btn.medium:checked /template/ ContentPresenter,
+					 ToggleButton.priority-btn.medium:checked:pointerover /template/ ContentPresenter,
+					 ToggleButton.priority-btn.medium:pressed /template/ ContentPresenter">
+			<Setter Property="Background" Value="#FBBF24"/>
+			<Setter Property="Foreground" Value="White"/>
+		</Style>
+
+		<!-- 4. Низкий приоритет (Зелёный) -->
+		<Style Selector="ToggleButton.priority-btn.low:pointerover /template/ ContentPresenter,
+					 ToggleButton.priority-btn.low:checked /template/ ContentPresenter,
+					 ToggleButton.priority-btn.low:checked:pointerover /template/ ContentPresenter,
+					 ToggleButton.priority-btn.low:pressed /template/ ContentPresenter">
+			<Setter Property="Background" Value="#10B981"/>
+			<Setter Property="Foreground" Value="White"/>
+		</Style>
+
+		<!-- 5. Без приоритета / Нет (Серый) -->
+		<Style Selector="ToggleButton.priority-btn.none:pointerover /template/ ContentPresenter,
+					 ToggleButton.priority-btn.none:checked /template/ ContentPresenter,
+					 ToggleButton.priority-btn.none:checked:pointerover /template/ ContentPresenter,
+					 ToggleButton.priority-btn.none:pressed /template/ ContentPresenter">
+			<Setter Property="Background" Value="#6B7280"/>
+			<Setter Property="Foreground" Value="White"/>
+		</Style>
+	</Window.Styles>
+
 
 	<ScrollViewer>
 		<StackPanel Margin="15" Spacing="10">
+			<!-- Шапка -->
 			<Grid ColumnDefinitions="*, Auto">
 				<TextBlock Grid.Column="0" Text="{Binding Loc[TaskTitle]}" FontSize="18" FontWeight="Bold" Foreground="#1E3A8A"/>
 				<Button Grid.Column="1" Content="✕" Command="{Binding CancelCommand}" Background="Transparent" BorderThickness="0" Foreground="Gray"/>
 			</Grid>
 
-			
-            <Border Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
-                <StackPanel Spacing="8">
-                    <TextBlock Text="Шаблон задачи" FontSize="12" FontWeight="SemiBold" Foreground="#1E40AF"/>
-                    <ComboBox Height="36" MinWidth="220" HorizontalAlignment="Stretch" PlaceholderText="Выберите шаблон"/>
-                    <WrapPanel Orientation="Horizontal" ItemHeight="36">
-                        <Button Content="Применить" MinWidth="120" Height="36" Margin="0,0,8,8"
-                                Background="#2563EB" Foreground="White"/>
-                        <Button Content="Сохранить как шаблон" MinWidth="220" Height="36" Margin="0,0,8,8"
-                                Background="#E5E7EB"/>
-                        <Button Content="Удалить шаблон" MinWidth="150" Height="36"
-                                Background="#FEE2E2" Foreground="#B91C1C"/>
-                    </WrapPanel>
-                </StackPanel>
-            </Border>
-
-<TextBlock Text="{Binding Loc[TaskNameLbl]}" FontSize="12" Foreground="Gray"/>
+			<!-- Поля -->
+			<TextBlock Text="{Binding Loc[TaskNameLbl]}" FontSize="12" Foreground="Gray"/>
 			<TextBox Text="{Binding Title}" Watermark="{Binding Loc[TaskNameWatermark]}"/>
 
 			<TextBlock Text="{Binding Loc[TaskDesc]}" FontSize="12" Foreground="Gray"/>
 			<TextBox Text="{Binding Description}" Watermark="{Binding Loc[TaskDescWatermark]}" Height="60" TextWrapping="Wrap"/>
+
+			<!-- Шаблоны -->
+			<TextBlock Text="Загрузить из шаблона:" FontSize="12" Foreground="Gray" Margin="0,8,0,4"/>
+			<ComboBox ItemsSource="{Binding TaskTemplates}" SelectedItem="{Binding SelectedTaskTemplate}" HorizontalAlignment="Stretch" Margin="0,0,0,12">
+				<ComboBox.ItemTemplate>
+					<DataTemplate>
+						<TextBlock Text="{Binding Name}"/>
+					</DataTemplate>
+				</ComboBox.ItemTemplate>
+			</ComboBox>
 
 			<CheckBox Content="{Binding Loc[HasDateOpt]}" IsChecked="{Binding HasDate}"/>
 			<DatePicker SelectedDate="{Binding DueDate}" HorizontalAlignment="Stretch" IsEnabled="{Binding HasDate}"/>
@@ -60,31 +102,31 @@
 				<TextBox Text="{Binding DurationMinutes}" Width="80"/>
 			</StackPanel>
 
+			<!-- Приоритеты (ToggleButton) -->
 			<TextBlock Text="{Binding Loc[PriorityLabel]}" FontSize="12" Foreground="Gray"/>
 			<Grid ColumnDefinitions="*, *, *, *">
-				<Button Grid.Column="0" Content="{Binding Loc[FilterHigh]}"
-                        Command="{Binding SetPriorityCommand}" CommandParameter="0"
-                        Background="{Binding PriorityIndex, Converter={StaticResource PriorityToColorConverter}, ConverterParameter=0}"
-                        Foreground="White" Height="32" CornerRadius="6" Margin="2"/>
-				<Button Grid.Column="1" Content="{Binding Loc[FilterMedium]}"
-                        Command="{Binding SetPriorityCommand}" CommandParameter="1"
-                        Background="{Binding PriorityIndex, Converter={StaticResource PriorityToColorConverter}, ConverterParameter=1}"
-                        Foreground="White" Height="32" CornerRadius="6" Margin="2"/>
-				<Button Grid.Column="2" Content="{Binding Loc[FilterLow]}"
-                        Command="{Binding SetPriorityCommand}" CommandParameter="2"
-                        Background="{Binding PriorityIndex, Converter={StaticResource PriorityToColorConverter}, ConverterParameter=2}"
-                        Foreground="White" Height="32" CornerRadius="6" Margin="2"/>
-				<Button Grid.Column="3" Content="Нет"
-                        Command="{Binding ClearPriorityCommand}"
-                        Background="#D1D5DB"
-                        Foreground="White" Height="32" CornerRadius="6" Margin="2"/>
+				<ToggleButton Grid.Column="0" Content="{Binding Loc[FilterHigh]}"
+                              IsChecked="{Binding IsHighSelected}"
+                              Command="{Binding SetPriorityCommand}" CommandParameter="0"
+                              Classes="priority-btn high"/>
+				<ToggleButton Grid.Column="1" Content="{Binding Loc[FilterMedium]}"
+                              IsChecked="{Binding IsMediumSelected}"
+                              Command="{Binding SetPriorityCommand}" CommandParameter="1"
+                              Classes="priority-btn medium"/>
+				<ToggleButton Grid.Column="2" Content="{Binding Loc[FilterLow]}"
+                              IsChecked="{Binding IsLowSelected}"
+                              Command="{Binding SetPriorityCommand}" CommandParameter="2"
+                              Classes="priority-btn low"/>
+				<ToggleButton Grid.Column="3" Content="Нет"
+                              IsChecked="{Binding IsNoneSelected}"
+                              Command="{Binding ClearPriorityCommand}"
+                              Classes="priority-btn none"/>
 			</Grid>
 
+			<!-- Проекты -->
 			<TextBlock Text="{Binding Loc[ProjectLabel]}" FontSize="12" Foreground="Gray"/>
 			<Grid ColumnDefinitions="*, Auto">
-				<ComboBox Grid.Column="0" ItemsSource="{Binding ProjectsList}"
-                          SelectedItem="{Binding SelectedProject, Mode=TwoWay}"
-                          HorizontalAlignment="Stretch" Margin="0,0,6,0">
+				<ComboBox Grid.Column="0" ItemsSource="{Binding ProjectsList}" SelectedItem="{Binding SelectedProject}" HorizontalAlignment="Stretch" Margin="0,0,6,0">
 					<ComboBox.ItemTemplate>
 						<DataTemplate DataType="models:ProjectItem">
 							<StackPanel Orientation="Horizontal" Spacing="8">
@@ -94,14 +136,19 @@
 						</DataTemplate>
 					</ComboBox.ItemTemplate>
 				</ComboBox>
-				<Button Grid.Column="1" Content="⚙" Command="{Binding OpenProjectsManagementCommand}"
-                        Width="34" Height="32" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                        Background="#EFF6FF" Foreground="#2563EB" FontWeight="Bold" CornerRadius="6"/>
+				<Button Grid.Column="1" Content="⚙" Command="{Binding OpenProjectsManagementCommand}" Width="34" Height="32" Background="#EFF6FF" Foreground="#2563EB" CornerRadius="6"/>
 			</Grid>
 
+			<Separator Margin="0,10,0,10"/>
+			<CheckBox Content="Сохранить как шаблон" IsChecked="{Binding SaveAsTemplate}" Margin="0,5,0,0"/>
+			<StackPanel IsEnabled="{Binding SaveAsTemplate}" Spacing="6" Margin="0,6,0,0">
+				<TextBox Watermark="Название шаблона" Text="{Binding TemplateName}"/>
+				<TextBlock Text="Шаблон появится в менеджере шаблонов" FontSize="10" Foreground="Gray"/>
+			</StackPanel>
+
 			<Grid ColumnDefinitions="*, *" Margin="0,24,0,0">
-				<Button Grid.Column="0" Content="Отмена" Command="{Binding CancelCommand}" Margin="5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Height="36" CornerRadius="6"/>
-				<Button Grid.Column="1" Content="Сохранить" Command="{Binding SaveCommand}" Margin="5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="#2563EB" Foreground="White" Height="36" CornerRadius="6" FontWeight="Bold"/>
+				<Button Grid.Column="0" Content="Отмена" Command="{Binding CancelCommand}" Margin="5" HorizontalAlignment="Stretch" Height="36" CornerRadius="6"/>
+				<Button Grid.Column="1" Content="Сохранить" Command="{Binding SaveCommand}" Margin="5" HorizontalAlignment="Stretch" Background="#2563EB" Foreground="White" Height="36" CornerRadius="6" FontWeight="Bold"/>
 			</Grid>
 		</StackPanel>
 	</ScrollViewer>

@@ -16,6 +16,7 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly IServiceProvider _services;
     private readonly IDatabaseService _db;
+    private readonly ITemplateService _templateService;
     private MonthViewModel? _currentMonthVM;
     private Action<DateTime>? _daySelectedHandler;
 
@@ -56,9 +57,10 @@ public partial class MainViewModel : ObservableObject
     public bool IsNotMonthView => !IsMonthView;
     public bool IsNotYearView => !IsYearView;
 
-    public MainViewModel(IServiceProvider services)
+    public MainViewModel(IServiceProvider services, ITemplateService templateService)
     {
         _services = services;
+        _templateService = templateService;
         _db = _services.GetRequiredService<IDatabaseService>();
 
         CurrentTaskListViewModel = _services.GetRequiredService<TaskListViewModel>();
@@ -139,10 +141,12 @@ public partial class MainViewModel : ObservableObject
     {
         var analyticsVm = new AnalyticsViewModel(_db);
         var window = new AnalyticsWindow { DataContext = analyticsVm };
-        if (App.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            window.ShowDialog(desktop.MainWindow);
-        }
+        var desktop = App.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var owner = desktop?.MainWindow;
+        if (owner != null && owner.IsVisible)
+            window.ShowDialog(owner);
+        else
+            window.Show();
     }
 
     [RelayCommand]
@@ -217,10 +221,27 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void OpenSettings()
     {
-        var settingsVm = new FocusFlow.ViewModels.SettingsViewModel();
-        var window = new FocusFlow.Views.SettingsWindow { DataContext = settingsVm };
-        if (App.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
-            window.ShowDialog(desktop.MainWindow);
+        var settingsVm = new SettingsViewModel();
+        var window = new SettingsWindow { DataContext = settingsVm };
+        var desktop = App.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var owner = desktop?.MainWindow;
+        if (owner != null && owner.IsVisible)
+            window.ShowDialog(owner);
+        else
+            window.Show();
+    }
+
+    [RelayCommand]
+    private void OpenTemplates()
+    {
+        var templatesVm = new TemplatesViewModel(_templateService);
+        var window = new TemplatesWindow { DataContext = templatesVm };
+        var desktop = App.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var owner = desktop?.MainWindow;
+        if (owner != null && owner.IsVisible)
+            window.ShowDialog(owner);
+        else
+            window.Show();
     }
 
     private void UpdateViewFlags()

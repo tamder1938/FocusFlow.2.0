@@ -54,6 +54,7 @@
 				<Button Content="{Binding Loc[TodayBtn]}" Command="{Binding GoToTodayCommand}"/>
 				<Button Content="{Binding Loc[NewTask]}" Command="{Binding CurrentTaskListViewModel.AddTaskCommand}"/>
 				<Button Content="🌙"/>
+				<Button Content="📋" Command="{Binding OpenTemplatesCommand}" ToolTip.Tip="Шаблоны"/>
 				<Button Content="{Binding Loc[Settings]}" Command="{Binding OpenSettingsCommand}"/>
 			</StackPanel>
 		</Grid>

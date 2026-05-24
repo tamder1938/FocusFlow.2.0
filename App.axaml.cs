@@ -67,5 +67,6 @@ public partial class App : Application
         services.AddTransient<YearViewModel>();
         services.AddTransient<TaskListViewModel>();
         services.AddTransient<TimerViewModel>();
+        services.AddSingleton<ITemplateService, TemplateService>();
     }
 }

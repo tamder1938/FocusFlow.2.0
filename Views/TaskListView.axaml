@@ -1,24 +1,39 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:FocusFlow.ViewModels"
+             xmlns:models="clr-namespace:FocusFlow.Models"
+             xmlns:conv="clr-namespace:FocusFlow.Converters"
              x:Class="FocusFlow.Views.TaskListView"
              x:DataType="vm:TaskListViewModel">
+
+	<UserControl.Resources>
+		<conv:PriorityToBrushConverter x:Key="PriorityToBrushConverter"/>
+	</UserControl.Resources>
+
 	<DockPanel Margin="15">
-		<!-- Заголовок блока "Задачи" -->
 		<TextBlock DockPanel.Dock="Top" Text="{Binding Loc[Tasks]}" FontSize="16" FontWeight="Bold" Margin="0,0,0,10" Foreground="#111827"/>
 
-		<!-- Панель фильтров приоритетов -->
 		<StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,10">
 			<Button Content="{Binding Loc[FilterAll]}" Background="#E5E7EB"/>
 			<Button Content="{Binding Loc[FilterHigh]}" Background="#FEE2E2" Foreground="#DC2626"/>
 			<Button Content="{Binding Loc[FilterMedium]}" Background="#FEF3C7" Foreground="#D97706"/>
 		</StackPanel>
 
-		<!-- Список задач (Оставляем вашу текущую реализацию DataGrid или ItemsControl) -->
-		<ListBox ItemsSource="{Binding Tasks}">
+		<ListBox ItemsSource="{Binding Tasks}" SelectedItem="{Binding SelectedTask}"
+                 DoubleTapped="OnListBoxDoubleTapped">
 			<ListBox.ItemTemplate>
-				<DataTemplate>
-					<TextBlock Text="{Binding Title}"/>
+				<DataTemplate x:DataType="models:TaskItem">
+					<Border Margin="0,4" Padding="12" CornerRadius="10" Background="#F3F4F6">
+						<Grid ColumnDefinitions="*, Auto">
+							<StackPanel Grid.Column="0" Spacing="4">
+								<TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold"/>
+								<TextBlock Text="{Binding Description}" Opacity="0.7" TextWrapping="Wrap"/>
+							</StackPanel>
+							<Border Grid.Column="1" Width="10" Height="10" CornerRadius="5"
+                                    Background="{Binding Priority, Converter={StaticResource PriorityToBrushConverter}}"
+                                    VerticalAlignment="Center" Margin="8,0,0,0"/>
+						</Grid>
+					</Border>
 				</DataTemplate>
 			</ListBox.ItemTemplate>
 		</ListBox>

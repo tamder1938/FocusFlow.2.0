@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace FocusFlow.Models;
 
@@ -17,4 +17,13 @@ public class TaskItem
 
     // Добавлено для совместимости с AnalyticsViewModel
     public string Project { get; set; } = "Работа";
+
+    public string PriorityClass =>
+        Priority switch
+        {
+            2 => "high",
+            1 => "medium",
+            0 => "low",
+            _ => ""
+        };
 }

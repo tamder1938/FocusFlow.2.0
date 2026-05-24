@@ -1,44 +1,76 @@
 using FocusFlow.Models;
 using LiteDB;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace FocusFlow.Services;
 
-public class TemplateService
+public interface ITemplateService
+{
+    // Для задач
+    IEnumerable<TaskTemplate> GetAllTaskTemplates();
+    void UpsertTaskTemplate(TaskTemplate template);
+    void DeleteTaskTemplate(int id);
+
+    // Для событий
+    List<EventTemplate> GetEventTemplates();
+    void SaveEventTemplate(EventTemplate template);
+    void DeleteEventTemplate(int id);
+}
+
+public class TemplateService : ITemplateService
 {
     private readonly LiteDatabase _database;
 
-    public TemplateService(string databasePath)
+    public TemplateService()
     {
-        _database = new LiteDatabase(databasePath);
+        var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FocusFlow");
+        Directory.CreateDirectory(folder);
+        var dbPath = Path.Combine(folder, "templates.db");
+        _database = new LiteDatabase(dbPath);
     }
 
-    public List<TaskTemplate> GetTaskTemplates() =>
-        _database.GetCollection<TaskTemplate>("task_templates")
-                 .FindAll()
-                 .OrderBy(t => t.Name)
-                 .ToList();
-
-    public List<EventTemplate> GetEventTemplates() =>
-        _database.GetCollection<EventTemplate>("event_templates")
-                 .FindAll()
-                 .OrderBy(t => t.Name)
-                 .ToList();
-
-    public void SaveTaskTemplate(TaskTemplate template)
+    // === Задачи ===
+    public IEnumerable<TaskTemplate> GetAllTaskTemplates()
     {
-        _database.GetCollection<TaskTemplate>("task_templates").Upsert(template);
+        return _database.GetCollection<TaskTemplate>("task_templates")
+                        .FindAll()
+                        .OrderBy(t => t.Name)
+                        .ToList();
     }
 
-    public void SaveEventTemplate(EventTemplate template)
+    public void UpsertTaskTemplate(TaskTemplate template)
     {
-        _database.GetCollection<EventTemplate>("event_templates").Upsert(template);
+        var col = _database.GetCollection<TaskTemplate>("task_templates");
+        if (template.Id == 0)
+            col.Insert(template);
+        else
+            col.Update(template);
     }
 
     public void DeleteTaskTemplate(int id)
     {
         _database.GetCollection<TaskTemplate>("task_templates").Delete(id);
+    }
+
+    // === События ===
+    public List<EventTemplate> GetEventTemplates()
+    {
+        return _database.GetCollection<EventTemplate>("event_templates")
+                        .FindAll()
+                        .OrderBy(t => t.Name)
+                        .ToList();
+    }
+
+    public void SaveEventTemplate(EventTemplate template)
+    {
+        var col = _database.GetCollection<EventTemplate>("event_templates");
+        if (template.Id == 0)
+            col.Insert(template);
+        else
+            col.Update(template);
     }
 
     public void DeleteEventTemplate(int id)

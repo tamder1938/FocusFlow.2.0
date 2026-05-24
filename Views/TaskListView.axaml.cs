@@ -1,5 +1,6 @@
 ﻿using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
+using Avalonia.Input;
+using FocusFlow.ViewModels;
 
 namespace FocusFlow.Views;
 
@@ -10,8 +11,11 @@ public partial class TaskListView : UserControl
         InitializeComponent();
     }
 
-    private void InitializeComponent()
+    private void OnListBoxDoubleTapped(object? sender, TappedEventArgs e)
     {
-        AvaloniaXamlLoader.Load(this);
+        if (DataContext is TaskListViewModel vm && vm.SelectedTask != null)
+        {
+            vm.EditTaskCommand?.Execute(vm.SelectedTask);
+        }
     }
 }
