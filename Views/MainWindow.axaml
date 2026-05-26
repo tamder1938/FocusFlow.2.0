@@ -79,16 +79,16 @@
 					<Border Background="White" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="12" Padding="18,16" BoxShadow="0 2 4 0 #05000000">
 						<StackPanel Spacing="10">
 							<TextBlock Text="{Binding Loc[AnalyticsTitle]}" FontSize="15" FontWeight="Bold" Foreground="#1E3A8A"/>
-							<TextBlock Text="План vs Fact сегодня" FontSize="10" Foreground="#9CA3AF" Margin="0,-6,0,8"/>
+							<TextBlock Text="{Binding Loc[PlanVsFactToday]}" FontSize="10" Foreground="#9CA3AF" Margin="0,-6,0,8"/>
 
 							<Grid ColumnDefinitions="*, Auto" Margin="0,2">
-								<TextBlock Grid.Column="0" Text="План" FontSize="12" FontWeight="Bold" Foreground="#111827"/>
+								<TextBlock Grid.Column="0" Text="{Binding Loc[Plan]}" FontSize="12" FontWeight="Bold" Foreground="#111827"/>
 								<TextBlock Grid.Column="1" Text="{Binding TodayPlanTimeStr}" FontSize="12" FontWeight="Bold" Foreground="#111827"/>
 							</Grid>
 							<Border Height="5" Background="#111827" CornerRadius="2.5" Margin="0,0,0,6"/>
 
 							<Grid ColumnDefinitions="*, Auto" Margin="0,2">
-								<TextBlock Grid.Column="0" Text="Факт" FontSize="12" FontWeight="Bold" Foreground="#111827"/>
+								<TextBlock Grid.Column="0" Text="{Binding Loc[Fact]}" FontSize="12" FontWeight="Bold" Foreground="#111827"/>
 								<TextBlock Grid.Column="1" Text="{Binding TodayFactTimeStr}" FontSize="12" FontWeight="Bold" Foreground="#111827"/>
 							</Grid>
 							<ProgressBar Value="{Binding TodayFactProgress}" Height="5" Minimum="0" Maximum="100"
@@ -96,7 +96,7 @@
 
 							<Grid ColumnDefinitions="*, Auto" Margin="0,6,0,0">
 								<StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-									<TextBlock Text="Отклонение:" FontSize="11" Foreground="#9CA3AF"/>
+									<TextBlock Text="{Binding Loc[Deviation]}:" FontSize="11" Foreground="#9CA3AF"/>
 									<TextBlock Text="{Binding TodayDeviationStr}" FontSize="11" FontWeight="Bold" Foreground="{Binding TodayDeviationColor}"/>
 								</StackPanel>
 								<Button Grid.Column="1" Content="{Binding Loc[MoreBtn]}" Command="{Binding OpenAnalyticsCommand}"

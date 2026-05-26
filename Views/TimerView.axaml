@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:FocusFlow.ViewModels"
+        xmlns:services="clr-namespace:FocusFlow.Services"
              xmlns:models="clr-namespace:FocusFlow.Models"
              x:Class="FocusFlow.Views.TimerView"
              x:DataType="vm:TimerViewModel">

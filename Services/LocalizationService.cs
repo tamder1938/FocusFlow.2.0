@@ -62,12 +62,38 @@ public class LocalizationService : ObservableObject
                 ["AddEventBtn"] = "+ Событие",
                 ["TodayBtn"] = "Сегодня",
 
+                ["AnalyticsSubtitle"] = "Детальный отчет за текущий период",
+                ["FocusedTotal"] = "Всего сфокусирован",
+                ["TasksCompleted"] = "Задач завершено",
+                ["Productivity"] = "Продуктивность",
+                ["FocusDistributionWeek"] = "Распределение фокуса по дням недели",
+                ["ProjectFocusCategories"] = "Фокус по категориям проектов",
+                ["Done"] = "Готово",
+                ["LowLevel"] = "Низкий уровень",
+                ["MediumLevel"] = "Средний уровень",
+                ["HighLevel"] = "Высокий уровень",
+
+                ["PlanVsFactToday"] = "План vs Факт сегодня",
+                ["MoreDetails"] = "Подробнее",
+                ["Plan"] = "План",
+                ["Fact"] = "Факт",
+                ["Timer"] = "Таймер",
+                ["CustomMode"] = "Пользовательский режим",
+                ["Week"] = "Неделя",
+                ["HoursShort"] = "ч",
+                ["MinutesShort"] = "м",
+                ["PerWeek"] = "за неделю",
+                ["Deviation"] = "Отклонение",
+                ["NoProject"] = "Без проекта",
+
+
                 // Шаблоны Помодоро
                 ["PomodoroTemplates"] = "Шаблоны Помодоро",
                 ["SaveAsTemplate"] = "Сохранить как шаблон",
                 ["TemplateName"] = "Имя шаблона",
                 ["WorkTime"] = "Работа",
                 ["BreakTime"] = "Отдых",
+
 
                 // Окна создания
                 ["TaskTitle"] = "Задача",
@@ -163,6 +189,32 @@ public class LocalizationService : ObservableObject
                 ["FilterMedium"] = "Medium",
                 ["AddEventBtn"] = "+ Event",
                 ["TodayBtn"] = "Today",
+
+                ["AnalyticsSubtitle"] = "Detailed report for current period",
+                ["FocusedTotal"] = "Total Focused",
+                ["TasksCompleted"] = "Tasks Completed",
+                ["Productivity"] = "Productivity",
+                ["FocusDistributionWeek"] = "Focus distribution by weekdays",
+                ["ProjectFocusCategories"] = "Focus by project categories",
+                ["Done"] = "Done",
+                ["LowLevel"] = "Low level",
+                ["MediumLevel"] = "Medium level",
+                ["HighLevel"] = "High level",
+
+                ["PlanVsFactToday"] = "Plan vs Fact today",
+                ["MoreDetails"] = "More Details",
+                ["Plan"] = "Plan",
+                ["Fact"] = "Fact",
+                ["Timer"] = "Timer",
+                ["CustomMode"] = "Custom Mode",
+                ["Week"] = "Week",
+                ["HoursShort"] = "h",
+                ["MinutesShort"] = "m",
+                ["PerWeek"] = "per week",
+                ["Deviation"] = "Deviation",
+                ["NoProject"] = "No Project",
+
+
 
                 // Шаблоны Помодоро
                 ["PomodoroTemplates"] = "Pomodoro Templates",

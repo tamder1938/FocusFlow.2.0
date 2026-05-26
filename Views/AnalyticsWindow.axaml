@@ -1,9 +1,10 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:vm="clr-namespace:FocusFlow.ViewModels"
+		xmlns:services="clr-namespace:FocusFlow.Services"
 		x:Class="FocusFlow.Views.AnalyticsWindow"
 		x:DataType="vm:AnalyticsViewModel"
-		Title="Статистика и аналитика"
+		Title="{Binding Source={x:Static services:LocalizationService.Instance}, Path=[AnalyticsTitle]}"
 		Width="520" Height="680"
 		WindowStartupLocation="CenterOwner"
 		Background="#F9FAFB">
@@ -37,12 +38,12 @@
 		<Border Grid.Row="0" Background="#2563EB" Padding="16,0">
 			<Grid ColumnDefinitions="Auto, *, Auto">
 				<StackPanel Grid.Column="0" VerticalAlignment="Center">
-					<TextBlock Text="Статистика и аналитика" FontSize="15" FontWeight="Bold" Foreground="White"/>
-					<TextBlock Text="Детальный отчет за текущий период" FontSize="10" Foreground="#93C5FD"/>
+					<TextBlock Text="{Binding Source={x:Static services:LocalizationService.Instance}, Path=[AnalyticsTitle]}" FontSize="15" FontWeight="Bold" Foreground="White"/>
+					<TextBlock Text="{Binding Source={x:Static services:LocalizationService.Instance}, Path=[AnalyticsSubtitle]}" FontSize="10" Foreground="#93C5FD"/>
 				</StackPanel>
 				<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
 					<Button Content="&lt;" Command="{Binding PreviousWeekCommand}" Background="#3B82F6" Foreground="White" Padding="10,4" CornerRadius="4"/>
-					<TextBlock Text="{Binding WeekStart, StringFormat='Неделя {0:dd.MM.yyyy}'}" Foreground="White" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="6,0"/>
+					<TextBlock Text="{Binding WeekTitle}" Foreground="White" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="6,0"/>
 					<Button Content="&gt;" Command="{Binding NextWeekCommand}" Background="#3B82F6" Foreground="White" Padding="10,4" CornerRadius="4"/>
 				</StackPanel>
 			</Grid>
@@ -56,7 +57,7 @@
 				<UniformGrid Columns="3" Rows="1">
 					<Border Classes="StatCard" Margin="0,0,4,0" ClipToBounds="True">
 						<StackPanel>
-							<TextBlock Text="Всего сфокусирован" Classes="CardHeader"/>
+							<TextBlock Text="{Binding Source={x:Static services:LocalizationService.Instance}, Path=[FocusedTotal]}" Classes="CardHeader"/>
 							<TextBlock Text="{Binding TotalFocusedTimeStr}" Classes="CardValue" Margin="0,0,0,6"/>
 							<TextBlock Text="{Binding WeekComparisonStr}" Foreground="{Binding WeekComparisonColor}" FontSize="11" FontWeight="SemiBold"/>
 						</StackPanel>
@@ -65,7 +66,7 @@
 					<!-- Карточка задач: ProgressBar обернут в Grid с отступами, чтобы линия не прижималась к краям -->
 					<Border Classes="StatCard" Margin="4,0,4,0" ClipToBounds="True">
 						<StackPanel>
-							<TextBlock Text="Задач завершено" Classes="CardHeader"/>
+							<TextBlock Text="{Binding Source={x:Static services:LocalizationService.Instance}, Path=[TasksCompleted]}" Classes="CardHeader"/>
 							<TextBlock Text="{Binding CompletedTasksRatio}" Classes="CardValue" Margin="0,0,0,8"/>
 
 							<Grid Margin="12,4,12,0">
@@ -83,7 +84,7 @@
 
 					<Border Classes="StatCard" Margin="4,0,0,0" ClipToBounds="True">
 						<StackPanel>
-							<TextBlock Text="Продуктивность" Classes="CardHeader"/>
+							<TextBlock Text="{Binding Source={x:Static services:LocalizationService.Instance}, Path=[Productivity]}" Classes="CardHeader"/>
 							<TextBlock Text="{Binding ProductivityPercentage, StringFormat='{}{0}%'}" Classes="CardValue" Foreground="{Binding ProductivityColor}" Margin="0,0,0,4"/>
 							<TextBlock Text="{Binding ProductivityLevel}" Foreground="{Binding ProductivityColor}" FontSize="11" FontWeight="SemiBold"/>
 						</StackPanel>
@@ -93,7 +94,7 @@
 				<!-- Остальные блоки -->
 				<Border Background="White" CornerRadius="10" Padding="16,14" BorderBrush="#F3F4F6" BorderThickness="1" BoxShadow="0 2 4 0 #03000000">
 					<StackPanel>
-						<TextBlock Text="Распределение фокуса по дням недели" FontSize="13" FontWeight="Bold" Foreground="#1E3A8A" Margin="0,0,0,20"/>
+						<TextBlock Text="{Binding Source={x:Static services:LocalizationService.Instance}, Path=[FocusDistributionWeek]}" FontSize="13" FontWeight="Bold" Foreground="#1E3A8A" Margin="0,0,0,20"/>
 						<ItemsControl ItemsSource="{Binding WeekDaysChart}">
 							<ItemsControl.ItemsPanel>
 								<ItemsPanelTemplate>
@@ -115,7 +116,7 @@
 
 				<Border Background="White" CornerRadius="10" Padding="16,14" BorderBrush="#F3F4F6" BorderThickness="1" BoxShadow="0 2 4 0 #03000000">
 					<StackPanel>
-						<TextBlock Text="Фокус по категориям проектов" FontSize="13" FontWeight="Bold" Foreground="#1E3A8A" Margin="0,0,0,14"/>
+						<TextBlock Text="{Binding Source={x:Static services:LocalizationService.Instance}, Path=[ProjectFocusCategories]}" FontSize="13" FontWeight="Bold" Foreground="#1E3A8A" Margin="0,0,0,14"/>
 						<ItemsControl ItemsSource="{Binding Segments}">
 							<ItemsControl.ItemTemplate>
 								<DataTemplate>
